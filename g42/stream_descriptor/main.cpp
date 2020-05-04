@@ -124,7 +124,7 @@ void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* c
 
 typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> dtls_sock;
 typedef std::shared_ptr<dtls_sock> dtls_sock_ptr;
-typedef std::array<unsigned char,1500> buffer_ptr;
+typedef std::array<unsigned char,MTU> buffer_ptr;
 typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
 typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
 
@@ -485,8 +485,8 @@ int main(int argc, char *argv[])
 				pfp_fact("TCP Server handshake : OK");
 				while(1) {
 					pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
-					unsigned char request1[BUFFER_SIZE];
-					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+					unsigned char request1[MTU];
+					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, MTU);
 					socket_tcp.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from socket");
@@ -504,8 +504,8 @@ int main(int argc, char *argv[])
 							pfp_fact("Error on read from socket : " << error.message());
 						}
 					});
-					unsigned char request2[BUFFER_SIZE];
-					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+					unsigned char request2[MTU];
+					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, MTU);
 					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&socket_tcp,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
@@ -671,8 +671,8 @@ int main(int argc, char *argv[])
 				while (1) {
 					pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
 
-					unsigned char request1[BUFFER_SIZE];
-					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+					unsigned char request1[MTU];
+					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, MTU);
 					client.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from socket");
@@ -691,8 +691,8 @@ int main(int argc, char *argv[])
 						}
 					});
 
-					unsigned char request2[BUFFER_SIZE];
-					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+					unsigned char request2[MTU];
+					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, MTU);
 					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&client,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
@@ -755,7 +755,7 @@ int main(int argc, char *argv[])
 
 				while (1) {
 					io_sys_context.reset();
-				std::array<char, 1500> buffer_data{0};
+				std::array<char, MTU> buffer_data{0};
 				boost::asio::const_buffer buffer(buffer_data.data(), buffer_data.size());
 
 				ssl_socket_udp client(io_sys_context, m_ssl_context_udp);
@@ -812,8 +812,8 @@ int main(int argc, char *argv[])
 //							});
 
 							// read tun / write socket
-							unsigned char request2[BUFFER_SIZE];
-							boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+							unsigned char request2[MTU];
+							boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, MTU);
 							size_t tun_read = sd.read_some(mb2, ec);
 							if (ec) {
 								pfp_fact(TUN0 << " read_some error: " << ec.message());
@@ -851,8 +851,8 @@ int main(int argc, char *argv[])
 //							});
 
 							// read socket / write tun
-							unsigned char request1[BUFFER_SIZE];
-							boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+							unsigned char request1[MTU];
+							boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, MTU);
 							size_t s_read = client.receive(mb1, ec);
 							if (ec) {
 								pfp_fact("socket receive error: " << ec.message());
@@ -947,8 +947,8 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 //						});
 
 						// read socket / write tun
-						unsigned char request1[BUFFER_SIZE];
-						boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+						unsigned char request1[MTU];
+						boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, MTU);
 						size_t s_read = socket.receive(mb1, ec);
 						if (ec) {
 							pfp_fact("socket receive error: " << ec.message());
@@ -1031,8 +1031,8 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 //						});
 
 						// read tun / write socket
-						unsigned char request2[BUFFER_SIZE];
-						boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+						unsigned char request2[MTU];
+						boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, MTU);
 						size_t tun_read = sd.read_some(mb2, ec);
 						if (ec) {
 							pfp_fact(TUN0 << " read_some error: " << ec.message());
