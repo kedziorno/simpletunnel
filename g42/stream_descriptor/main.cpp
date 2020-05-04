@@ -18,9 +18,11 @@
 #include "pfplog.hpp"
 #include "dbgstr.hpp"
 
+#ifdef PCAPPLUSPLUS
 #include "PcapFilter.h"
 #include "PcapFileDevice.h"
 #include "PcapLiveDeviceList.h"
+#endif
 
 #define TUN0 "tun1" // TODO we use vpn?
 #define IPV6SERVER "fd42::1"
@@ -34,6 +36,7 @@
 #define SSL_UDP 1
 #define PCAP_FILE "g42_tun"
 
+#ifdef PCAPPLUSPLUS
 struct PacketStats {
 	int ethPacketCount;
 	int ipv4PacketCount;
@@ -86,6 +89,7 @@ struct PacketStats {
 		printf("SSL      packet count: %d\n", sslPacketCount);
 	}
 };
+#endif
 
 void usage() {
 	pfp_fact("'-s' - Server, '-c [host]' - Client, '-t' - SSL TCP, '-u' - SSL UDP");
@@ -110,11 +114,13 @@ bool verifyCookie(const std::string &cookie, const boost::asio::ip::udp::endpoin
 	return (cookie == "deafbeefcafe");
 }
 
+#ifdef PCAPPLUSPLUS
 void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie) {
 	PacketStats* stats = (PacketStats*)cookie;
 	pcpp::Packet parsedPacket(packet);
 	stats->consumePacket(parsedPacket);
 }
+#endif
 
 typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> dtls_sock;
 typedef std::shared_ptr<dtls_sock> dtls_sock_ptr;
@@ -325,6 +331,7 @@ int main(int argc, char *argv[])
 		pfp_fact("Interface " << TUN0 << " exists");
 	}
 
+#ifdef PCAPPLUSPLUS
 	// open .pcap file depend from -w flag
 	pcpp::PcapNgFileWriterDevice pcapWriter(PCAP_FILE);
 	if (write_to_pcap_file == 1) {
@@ -365,10 +372,12 @@ int main(int argc, char *argv[])
 			pfp_fact("PCAP++ capturing is activate");
 		}
 	}
+#endif
 
-	// install the CTRL+... handler
 	boost::asio::io_context io_sys_context;
-	//io_sys_context.run();
+#ifdef PCAPPLUSPLUS
+// install the CTRL+... handler
+// io_sys_context.run();
 //	boost::asio::signal_set signal_(io_sys_context, SIGINT );
 //	signal_.async_wait([write_to_pcap_file,&dev,&pcapWriter,&packetVec,&packet_stats](const boost::system::error_code & error , int signal_number) {
 //		if (!error) {
@@ -406,6 +415,7 @@ int main(int argc, char *argv[])
 //			pfp_fact("Error in signal_set async_wait signal : " << error.message());
 //		}
 //	});
+#endif
 
 	boost::asio::posix::stream_descriptor sd(io_sys_context, tun_fd);
 
@@ -1019,6 +1029,19 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 //								});
 //							}
 //						});
+						socket->async_shutdown([socket](const boost::asio::error_code & error){
+						if (error) {
+							pfp_fact("async_shutdown : " << error.message());
+						} else {
+							pfp_fact("async_shutdown : OK");
+						}
+					});
+//					socket.get()->shutdown(ec);
+//					if (ec) {
+//						pfp_fact(TUN0 << " async_receive socket shutdown : " << ec.message());
+//					} else {
+//						pfp_fact(TUN0 << " async_receive socket shutdown : OK");
+//					}
 				}
 			});
 		}
