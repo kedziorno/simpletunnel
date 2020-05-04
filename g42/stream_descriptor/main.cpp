@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 
 		// set type
 		struct ifreq if_tun = { 0 };
-		if_tun.ifr_flags = IFF_TUN | IFF_NO_PI;
+		if_tun.ifr_flags = IFF_TUN;
 		//if_tun.ifr_flags = IFF_TAP | IFF_NO_PI;
 		memcpy(&if_tun.ifr_name, TUN0, IFNAMSIZ);
 		if (ioctl(tun_fd, TUNSETIFF, &if_tun) < 0) {
