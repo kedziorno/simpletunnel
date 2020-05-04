@@ -783,51 +783,90 @@ int main(int argc, char *argv[])
 						pfp_fact("UDP Client async handshake failed : " << error.message());
 					} else {
 						pfp_fact("UDP Client handshake : OK");
+						pfp_fact("UDP Client bytes : " << bytes_transferred);
 						while (1) {
 							pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
+							boost::system::error_code ec;
 
+							// tun async read / socket async write
+//							unsigned char request2[BUFFER_SIZE];
+//							boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+//							sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&client,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
+//								if (!error) {
+//									pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
+//									s_tun_in += bytes_transferred;
+//									boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
+//									client.async_send(mb, [&s_socket_out](const boost::system::error_code & error, size_t bytes_transferred){
+//										if (!error) {
+//											pfp_fact("Write " << bytes_transferred << " bytes to socket");
+//											s_socket_out += bytes_transferred;
+//										} else {
+//											pfp_fact("Error on write to socket : " << error.message());
+//										}
+//									});
+//								} else {
+//									pfp_fact("Error on read from " << TUN0 << " : " << error.message());
+//								}
+//							});
+
+							// read tun / write socket
 							unsigned char request2[BUFFER_SIZE];
 							boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
-							sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&client,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-								if (!error) {
-									pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
-									s_tun_in += bytes_transferred;
-									boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
-									client.async_send(mb, [&s_socket_out](const boost::system::error_code & error, size_t bytes_transferred){
-										if (!error) {
-											pfp_fact("Write " << bytes_transferred << " bytes to socket");
-											s_socket_out += bytes_transferred;
-										} else {
-											pfp_fact("Error on write to socket : " << error.message());
-										}
-									});
+							size_t tun_read = sd.read_some(mb2, ec);
+							if (ec) {
+								pfp_fact(TUN0 << " read_some error: " << ec.message());
+							} else {
+								pfp_fact("Read " << tun_read << " bytes from fd=" << sd.native_handle());
+								boost::asio::mutable_buffer mb = boost::asio::buffer(mb2, tun_read);
+								size_t s_write = client.send(mb, ec);
+								if (!ec) {
+									pfp_fact("Write " << s_write << " bytes to socket");
 								} else {
-									pfp_fact("Error on read from " << TUN0 << " : " << error.message());
+									pfp_fact("Error on write to socket : " << ec.message());
 								}
-							});
+							}
 
+							// socket async read / tun async write
+//							unsigned char request1[BUFFER_SIZE];
+//							boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+//							client.async_receive(mb1, [&s_socket_in,&s_tun_out,&mb1,&sd](const boost::system::error_code &error, size_t bytes_transferred){
+//								if (!error) {
+//									pfp_fact("Read " << bytes_transferred << " bytes from socket");
+//									s_socket_in += bytes_transferred;
+//									boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
+//									boost::system::error_code ec;
+//									sd.async_write_some(mb, [&s_tun_out,&sd](const boost::system::error_code &error, size_t bytes_transferred){
+//										if (!error) {
+//											pfp_fact("Write " << bytes_transferred << " bytes to fd=" << sd.native_handle());
+//											s_tun_out += bytes_transferred;
+//										} else {
+//											pfp_fact("Error on write to " << TUN0 << " : " << error.message());
+//										}
+//									});
+//								} else {
+//									pfp_fact("Error on read from socket : " << error.message());
+//								}
+//							});
+
+							// read socket / write tun
 							unsigned char request1[BUFFER_SIZE];
 							boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-							client.async_receive(mb1, [&s_socket_in,&s_tun_out,&mb1,&sd](const boost::system::error_code &error, size_t bytes_transferred){
-								if (!error) {
-									pfp_fact("Read " << bytes_transferred << " bytes from socket");
-									s_socket_in += bytes_transferred;
-									boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
-									boost::system::error_code ec;
-									sd.async_write_some(mb, [&s_tun_out,&sd](const boost::system::error_code &error, size_t bytes_transferred){
-										if (!error) {
-											pfp_fact("Write " << bytes_transferred << " bytes to fd=" << sd.native_handle());
-											s_tun_out += bytes_transferred;
-										} else {
-											pfp_fact("Error on write to " << TUN0 << " : " << error.message());
-										}
-									});
+							size_t s_read = client.receive(mb1, ec);
+							if (ec) {
+								pfp_fact("socket receive error: " << ec.message());
+							} else {
+								pfp_fact("Read " << s_read << " bytes from socket");
+								boost::asio::mutable_buffer mb = boost::asio::buffer(mb1, s_read);
+								size_t sd_write = sd.write_some(mb, ec);
+								if (!ec) {
+									pfp_fact("Write " << sd_write << " bytes to fd=" << sd.native_handle());
 								} else {
-									pfp_fact("Error on read from socket : " << error.message());
+									pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 								}
-							});
-							io_sys_context.run();
-							io_sys_context.restart();
+							}
+
+//							io_sys_context.run();
+//							io_sys_context.restart();
 						}; // loop
 					}
 				});
