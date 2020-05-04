@@ -125,8 +125,11 @@ void onPacketArrives(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* c
 typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> dtls_sock;
 typedef std::shared_ptr<dtls_sock> dtls_sock_ptr;
 typedef std::array<unsigned char,1500> buffer_ptr;
+typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
+typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
 
-void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd);
+//void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd);
+void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd);
 
 int main(int argc, char *argv[])
 {
@@ -425,7 +428,6 @@ int main(int argc, char *argv[])
 	if (cs == SERVER) { // server mode
 		if (ssl_tcp_udp == SSL_TCP) { // s tcp mode
 			pfp_fact("SERVER TCP...");
-			typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
 			boost::asio::ssl::context m_ssl_context_tcp(boost::asio::ssl::context::sslv23);
 
 			boost::system::error_code ec_1;
@@ -570,25 +572,26 @@ int main(int argc, char *argv[])
 				pfp_fact("UDP SSL use tmp dh file : OK");
 			}
 
-			boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
-			boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
-			acceptor.set_option(boost::asio::socket_base::reuse_address(true));
-			acceptor.set_cookie_generate_callback(generateCookie);
-			acceptor.set_cookie_verify_callback(verifyCookie);
-			acceptor.bind(ep, error);
-			if (!error) {
-				pfp_fact("UDP Bind to : " << acceptor.local_endpoint().address().to_string());
-			} else {
-				pfp_fact("UDP Bind error : " << error.message());
-			}
+//			boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
+//			boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
+//			acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+//			acceptor.set_cookie_generate_callback(generateCookie);
+//			acceptor.set_cookie_verify_callback(verifyCookie);
+//			acceptor.bind(ep, error);
+//			if (!error) {
+//				pfp_fact("UDP Bind to : " << acceptor.local_endpoint().address().to_string());
+//			} else {
+//				pfp_fact("UDP Bind error : " << error.message());
+//			}
 
-			dtls_sock_ptr socket(new dtls_sock(acceptor.get_executor(), m_ssl_context_udp));
-			//ssl_socket_udp socket_udp(io_sys_context, m_ssl_context_udp);
-			buffer_ptr buffer;
+//			dtls_sock_ptr socket(new dtls_sock(acceptor.get_executor(), m_ssl_context_udp));
+//			//ssl_socket_udp socket_udp(io_sys_context, m_ssl_context_udp);
+//			buffer_ptr buffer;
 
-			buffer.fill(0);
-			//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
-			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
+//			buffer.fill(0);
+//			//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
+//			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
+			listen_udp(m_ssl_context_udp, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			//io_sys_context.run(); // TODO herE?
 			if (error) {
@@ -723,7 +726,6 @@ int main(int argc, char *argv[])
 				pfp_fact("UDP Client cannot resolve the query " << query.host_name() << "/" << query.service_name() << " : " << ec.message());
 			} else {
 				pfp_fact("UDP Client resolver resolv the : " << it->endpoint().address().to_string() << ":" << it->endpoint().port());
-				typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
 				boost::asio::ssl::dtls::context m_ssl_context_udp(boost::asio::ssl::dtls::context::dtls_client);
 
 				m_ssl_context_udp.load_verify_file("server.pem", ec);
@@ -876,10 +878,31 @@ int main(int argc, char *argv[])
 	} // CS_CLIENT
 } // main
 
-void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd) {
+// void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd)
+void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd) {
 	boost::system::error_code ec;
+	buffer_ptr buffer;
 	boost::asio::mutable_buffer mb = boost::asio::buffer(buffer.data(), buffer.size());
-	acceptor.async_accept(*socket, mb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb](const boost::asio::error_code &ec, size_t size) {
+	while (1) {
+		io_sys_context.reset();
+		boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
+		boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
+		acceptor.set_option(boost::asio::socket_base::reuse_address(true));
+		acceptor.set_cookie_generate_callback(generateCookie);
+		acceptor.set_cookie_verify_callback(verifyCookie);
+		acceptor.bind(ep, ec);
+		if (!ec) {
+			pfp_fact("UDP Bind to : " << acceptor.local_endpoint().address().to_string());
+		} else {
+			pfp_fact("UDP Bind error : " << ec.message());
+		}
+
+		//dtls_sock_ptr socket(new dtls_sock(acceptor.get_executor(), m_ssl_context_udp));
+		ssl_socket_udp socket(io_sys_context, m_ssl_context_udp);
+
+		buffer.fill(0);
+		//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
+	acceptor.async_accept(socket, mb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb](const boost::asio::error_code &ec, size_t size) {
 		if(ec) {
 			pfp_fact("UDP in async - Error in Accept: " << ec.message());
 		} else {
@@ -887,7 +910,7 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 			//pfp_fact("async_accept size is : " << size);
 			//pfp_fact("async_accept buffer  : " << n_pfp::dbgstr_hex(mb.data(), mb.size())); // TODO cookie at 60 byte?
 			boost::asio::mutable_buffers_1 cb = boost::asio::mutable_buffers_1(buffer.data(), buffer.size());
-			socket.get()->async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&cb](const boost::system::error_code &error, size_t size) {
+			socket.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&cb](const boost::system::error_code &error, size_t size) {
 				if (error) {
 					pfp_fact("UDP Server async_handshake : " << error.message());
 				} else {
@@ -899,7 +922,7 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 
 //						unsigned char request1[BUFFER_SIZE];
 //						boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-//						socket.get()->async_receive(mb1, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb1](const boost::asio::error_code &error, size_t bytes_transferred) {
+//						socket.async_receive(mb1, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb1](const boost::asio::error_code &error, size_t bytes_transferred) {
 //							if (!error) {
 //								pfp_fact("Read " << bytes_transferred << " bytes from socket");
 //								s_socket_in += bytes_transferred;
@@ -920,7 +943,7 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 						// read socket / write tun
 						unsigned char request1[BUFFER_SIZE];
 						boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-						size_t s_read = socket.get()->receive(mb1, ec);
+						size_t s_read = socket.receive(mb1, ec);
 						if (ec) {
 							pfp_fact("socket receive error: " << ec.message());
 						} else {
@@ -988,7 +1011,7 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 //								pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
 //								s_tun_in += bytes_transferred;
 //								boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
-//								socket.get()->async_send(mb, [&socket,&s_socket_out](const boost::asio::error_code &ec, size_t size){
+//								socket.async_send(mb, [&socket,&s_socket_out](const boost::asio::error_code &ec, size_t size){
 //									if (!ec) {
 //										pfp_fact("Write " << size << " bytes to socket");
 //										s_socket_out += size;
@@ -996,7 +1019,6 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 //										pfp_fact("Error on write to socket : " << ec.message());
 //									}
 //								});
-
 //							} else {
 //								pfp_fact("Error on read from " << TUN0 << " : " << error.message());
 //							}
@@ -1011,7 +1033,7 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 						} else {
 							pfp_fact("Read " << tun_read << " bytes from fd=" << sd.native_handle());
 							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2, tun_read);
-							size_t s_write = socket.get()->send(mb, ec);
+							size_t s_write = socket.send(mb, ec);
 							if (!ec) {
 								pfp_fact("Write " << s_write << " bytes to socket");
 							} else {
@@ -1068,19 +1090,13 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 //								});
 //							}
 //						});
-						socket->async_shutdown([socket](const boost::asio::error_code & error){
-						if (error) {
-							pfp_fact("async_shutdown : " << error.message());
-						} else {
-							pfp_fact("async_shutdown : OK");
-						}
-					});
-//					socket.get()->shutdown(ec);
-//					if (ec) {
-//						pfp_fact(TUN0 << " async_receive socket shutdown : " << ec.message());
-//					} else {
-//						pfp_fact(TUN0 << " async_receive socket shutdown : OK");
-//					}
+//						socket->async_shutdown([socket](const boost::asio::error_code & error){
+//						if (error) {
+//							pfp_fact("async_shutdown : " << error.message());
+//						} else {
+//							pfp_fact("async_shutdown : OK");
+//						}
+//					});
 				}
 			});
 		}
@@ -1091,8 +1107,24 @@ void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> &
 		pfp_fact("async_accept : OK");
 	}
 
-	io_sys_context.run();
 	io_sys_context.restart();
 
-	listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in, s_tun_out, s_socket_in, s_socket_out, error, sd);
+	io_sys_context.run(ec);
+	if (ec) {
+		pfp_fact("io run: " << ec.message());
+	} else {
+		pfp_fact("io run : OK");
+	}
+
+	io_sys_context.reset();
+
+//	socket.get()->shutdown(ec);
+//	if (ec) {
+//		pfp_fact(TUN0 << " async_receive socket shutdown : " << ec.message());
+//	} else {
+//		pfp_fact(TUN0 << " async_receive socket shutdown : OK");
+//	}
+
+	}
+	//listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in, s_tun_out, s_socket_in, s_socket_out, error, sd);
 }
