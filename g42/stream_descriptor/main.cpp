@@ -179,8 +179,8 @@ int main(int argc, char *argv[])
 
 		// set type
 		struct ifreq if_tun = { 0 };
-		//if_tun.ifr_flags = IFF_TUN;
-		if_tun.ifr_flags = IFF_TAP;
+		if_tun.ifr_flags = IFF_TUN;
+		//if_tun.ifr_flags = IFF_TAP;
 		memcpy(&if_tun.ifr_name, TUN0, IFNAMSIZ);
 		if (ioctl(tun_fd, TUNSETIFF, &if_tun) < 0) {
 			pfp_fact("Tun ioctl : " << strerror(errno));
