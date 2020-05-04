@@ -1,0 +1,8 @@
+[submodule "PcapPlusPlus"]
+	path = g42/stream_descriptor/deps/PcapPlusPlus
+	url = https://github.com/seladb/PcapPlusPlus.git
+	branch = master
+[submodule "asio_dtls"]
+	path = g42/stream_descriptor/deps/asio_dtls
+	url = https://github.com/sdamm/asio_dtls.git
+	branch = master
