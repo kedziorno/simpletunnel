@@ -520,12 +520,14 @@ int main(int argc, char *argv[])
 					socket_tcp.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from socket");
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), bytes_transferred));
 							s_socket_in += bytes_transferred;
 							boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
 							boost::system::error_code ec;
 							size_t sd_ws = sd.write_some(mb, ec);
 							if (!ec) {
 								pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_ws));
 								s_tun_out += sd_ws;
 							} else {
 								pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
@@ -540,12 +542,14 @@ int main(int argc, char *argv[])
 					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&socket_tcp,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
 						if (!error) {
 							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), bytes_transferred));
 							s_tun_in += bytes_transferred;
 							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
 							boost::system::error_code ec;
 							size_t s_ws = socket_tcp.write_some(mb, ec);
 							if (!ec) {
 								pfp_fact("Write " << s_ws << " bytes to socket");
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), s_ws));
 								s_socket_out += s_ws;
 							} else {
 								pfp_fact("Error on write to socket : " << ec.message());
