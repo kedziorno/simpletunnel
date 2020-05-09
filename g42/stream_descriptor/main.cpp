@@ -795,8 +795,6 @@ int main(int argc, char *argv[])
 					pfp_fact("UDP Client SSL use tmp dh file : OK");
 				}
 
-				while (1) {
-				io_sys_context.reset();
 				std::array<char, BUFFER_SIZE> buffer_data{0};
 				boost::asio::const_buffer buffer(buffer_data.data(), buffer_data.size());
 
@@ -827,10 +825,14 @@ int main(int argc, char *argv[])
 					if (error) {
 						pfp_fact("UDP Client async handshake failed : " << error.message());
 					} else {
+						boost::system::error_code ec;
+
 						pfp_fact("UDP Client handshake : OK");
 						pfp_fact("UDP Client bytes : " << bytes_transferred);
-							pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
-							boost::system::error_code ec;
+
+						while (1) {
+						io_sys_context.reset();
+						pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
 
 							// tun async read / socket async write
 //							unsigned char request2[BUFFER_SIZE];
@@ -911,16 +913,17 @@ int main(int argc, char *argv[])
 //							io_sys_context.run();
 //							io_sys_context.restart();
 					}
+						//io_sys_context.restart();
+						io_sys_context.run_one(ec);
+						if (ec) {
+							pfp_fact("io run: " << ec.message());
+						} else {
+							pfp_fact("io run : OK");
+						}
+						//io_sys_context.reset();
+					}; // loop
 				});
-				io_sys_context.restart();
-				io_sys_context.run(ec);
-				if (ec) {
-					pfp_fact("io run: " << ec.message());
-				} else {
-					pfp_fact("io run : OK");
-				}
-				io_sys_context.reset();
-			}; // loop
+				io_sys_context.run();
 			}
 		} // SSL_UDP
 	} // CS_CLIENT

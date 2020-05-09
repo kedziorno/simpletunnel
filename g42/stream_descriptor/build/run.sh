@@ -7,4 +7,5 @@ make
 cgexec -g memory:grp1 sudo ./stream_descriptor -s -u
 #cgexec -g memory:grp1 sudo ./stream_descriptor -s -t
 # client
-#cgexec -g memory:grp1 sudo ./stream_descriptor -c 10.137.0.15 -u
+cgexec -g memory:grp1 sudo ./stream_descriptor -c 10.137.0.15 -u
+#cgexec -g memory:grp1 sudo ./stream_descriptor -c 10.137.0.15 -t
