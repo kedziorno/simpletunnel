@@ -863,10 +863,12 @@ int main(int argc, char *argv[])
 								pfp_fact(TUN0 << " read_some error: " << ec.message());
 							} else {
 								pfp_fact("Read " << tun_read << " bytes from fd=" << sd.native_handle());
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), tun_read));
 								boost::asio::mutable_buffer mb = boost::asio::buffer(mb2, tun_read);
 								size_t s_write = client.send(mb, ec);
 								if (!ec) {
 									pfp_fact("Write " << s_write << " bytes to socket");
+									pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), s_write));
 								} else {
 									pfp_fact("Error on write to socket : " << ec.message());
 								}
@@ -902,10 +904,12 @@ int main(int argc, char *argv[])
 								pfp_fact("socket receive error: " << ec.message());
 							} else {
 								pfp_fact("Read " << s_read << " bytes from socket");
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), s_read));
 								boost::asio::mutable_buffer mb = boost::asio::buffer(mb1, s_read);
 								size_t sd_write = sd.write_some(mb, ec);
 								if (!ec) {
 									pfp_fact("Write " << sd_write << " bytes to fd=" << sd.native_handle());
+									pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_write));
 								} else {
 									pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 								}
@@ -1013,11 +1017,13 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 						if (ec) {
 							pfp_fact("socket receive error: " << ec.message());
 						} else {
-							pfp_fact("Read " << s_read << " bytes from socket , dump : " << n_pfp::dbgstr_hex(mb1.data(), s_read));
+							pfp_fact("Read " << s_read << " bytes from socket");
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), s_read));
 							boost::asio::mutable_buffer mb = boost::asio::buffer(mb1, s_read);
 							size_t sd_write = sd.write_some(mb, ec);
 							if (!ec) {
-								pfp_fact("Write " << sd_write << " bytes to fd=" << sd.native_handle() << ", dump : " << n_pfp::dbgstr_hex(mb.data(), sd_write));
+								pfp_fact("Write " << sd_write << " bytes to fd=" << sd.native_handle());
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_write));
 //								struct timeval tp;
 //								gettimeofday(&tp, NULL);
 //								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), sd_write, tp, false);
@@ -1101,11 +1107,13 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 						if (ec) {
 							pfp_fact(TUN0 << " read_some error: " << ec.message());
 						} else {
-							pfp_fact("Read " << tun_read << " bytes from fd=" << sd.native_handle() << ", dump : " << n_pfp::dbgstr_hex(mb2.data(), tun_read));
+							pfp_fact("Read " << tun_read << " bytes from fd=" << sd.native_handle());
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), tun_read));
 							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2, tun_read);
 							size_t s_write = socket.send(mb, ec);
 							if (!ec) {
-								pfp_fact("Write " << s_write << " bytes to socket, dump : " << n_pfp::dbgstr_hex(mb.data(), s_write));
+								pfp_fact("Write " << s_write << " bytes to socket");
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), s_write));
 //								struct timeval tp;
 //								gettimeofday(&tp, NULL);
 //								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), s_write, tp, false);
