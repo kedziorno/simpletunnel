@@ -35,8 +35,9 @@
 #define IPV6CLIENT "fd42::2"
 #define CLIENT 0
 #define CS_PORT 9042
-#define BUFFER_SIZE 1514
-#define TUN_MTU 9000
+//#define BUFFER_SIZE ETH_FRAME_LEN
+#define BUFFER_SIZE 65535
+#define TUN_MTU 1304
 #define SSL_TCP 0
 #define SSL_UDP 1
 #define PCAP_FILE "g42_tun"
