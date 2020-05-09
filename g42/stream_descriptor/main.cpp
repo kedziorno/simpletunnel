@@ -772,31 +772,31 @@ int main(int argc, char *argv[])
 
 				m_ssl_context_udp.load_verify_file("server.pem", ec);
 				if (ec) {
-					pfp_fact("UDP SSL load verify file : " << ec.message());
+					pfp_fact("UDP Client SSL load verify file : " << ec.message());
 				} else {
-					pfp_fact("UDP SSL load verify file : OK");
+					pfp_fact("UDP Client SSL load verify file : OK");
 				}
 				m_ssl_context_udp.use_certificate_chain_file("server.pem", ec);
 				if (ec) {
-					pfp_fact("UDP SSL use certificate chain file : " << ec.message());
+					pfp_fact("UDP Client SSL use certificate chain file : " << ec.message());
 				} else {
-					pfp_fact("UDP SSL use certificate chain file : OK");
+					pfp_fact("UDP Client SSL use certificate chain file : OK");
 				}
 				m_ssl_context_udp.use_private_key_file("server.pem", boost::asio::ssl::context::pem, ec);
 				if (ec) {
-					pfp_fact("UDP SSL use private key file : " << ec.message());
+					pfp_fact("UDP Client SSL use private key file : " << ec.message());
 				} else {
-					pfp_fact("UDP SSL use private key file : OK");
+					pfp_fact("UDP Client SSL use private key file : OK");
 				}
 				m_ssl_context_udp.use_tmp_dh_file("dh2048.pem", ec);
 				if (ec) {
-					pfp_fact("UDP SSL use tmp dh file : " << ec.message());
+					pfp_fact("UDP Client SSL use tmp dh file : " << ec.message());
 				} else {
-					pfp_fact("UDP SSL use tmp dh file : OK");
+					pfp_fact("UDP Client SSL use tmp dh file : OK");
 				}
 
 				while (1) {
-					io_sys_context.reset();
+				io_sys_context.reset();
 				std::array<char, BUFFER_SIZE> buffer_data{0};
 				boost::asio::const_buffer buffer(buffer_data.data(), buffer_data.size());
 
@@ -817,9 +817,9 @@ int main(int argc, char *argv[])
 
 				client.lowest_layer().connect(it->endpoint(), ec);
 				if (ec) {
-					pfp_fact("UDP Conect error to " << it->host_name() << " : " << ec.message());
+					pfp_fact("UDP Client Conect error to " << it->host_name() << " : " << ec.message());
 				} else {
-					pfp_fact("UDP Connected to : " << it->host_name());
+					pfp_fact("UDP Client Connected to : " << it->host_name());
 				}
 				client.async_handshake(boost::asio::ssl::stream_base::handshake_type::client, buffer,\
 				[&buffer_data,&s_loop_idx,&s_socket_in,&s_socket_out,&s_tun_in,&s_tun_out,&sd,&client,&io_sys_context]\
@@ -920,8 +920,8 @@ int main(int argc, char *argv[])
 					pfp_fact("io run : OK");
 				}
 				io_sys_context.reset();
-			}
 			}; // loop
+			}
 		} // SSL_UDP
 	} // CS_CLIENT
 } // main
@@ -931,14 +931,13 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 	boost::system::error_code ec;
 	buffer_ptr buffer;
 	boost::asio::mutable_buffer mb = boost::asio::buffer(buffer.data(), buffer.size());
-	while (1) {
-		io_sys_context.reset();
 		boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
 		boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
 		acceptor.set_option(boost::asio::socket_base::reuse_address(true));
 		acceptor.set_cookie_generate_callback(generateCookie);
 		acceptor.set_cookie_verify_callback(verifyCookie);
 		acceptor.bind(ep, ec);
+
 		if (!ec) {
 			pfp_fact("UDP Bind to : " << acceptor.local_endpoint().address().to_string());
 		} else {
@@ -963,10 +962,13 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 					pfp_fact("UDP Server async_handshake : " << error.message());
 				} else {
 					pfp_fact("UDP Server async_handshake : OK");
+					boost::system::error_code ec;
 					//pfp_fact("async_handshake size is : " << size);
 					//pfp_fact("async_handshake buffer  : " << n_pfp::dbgstr_hex2(cb.data(), cb.size(), 64));
-						pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
-						boost::system::error_code ec;
+
+					while (1) {
+						io_sys_context.reset();
+					pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
 
 //						pfp_fact("non-blocking : " << sd.non_blocking());
 //						sd.non_blocking(true);
@@ -1166,6 +1168,15 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 //							pfp_fact("async_shutdown : OK");
 //						}
 //					});
+						//io_sys_context.reset();
+						io_sys_context.run_one(ec);
+						if (ec) {
+							pfp_fact("io run: " << ec.message());
+						} else {
+							pfp_fact("io run : OK");
+						}
+						//io_sys_context.restart();
+					}; // loop
 				}
 			});
 		}
@@ -1176,24 +1187,14 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 		pfp_fact("async_accept : OK");
 	}
 
-	io_sys_context.reset();
-
-	io_sys_context.run(ec);
-	if (ec) {
-		pfp_fact("io run: " << ec.message());
-	} else {
-		pfp_fact("io run : OK");
-	}
-
-	io_sys_context.restart();
-
-//	socket.get()->shutdown(ec);
-//	if (ec) {
-//		pfp_fact(TUN0 << " async_receive socket shutdown : " << ec.message());
-//	} else {
-//		pfp_fact(TUN0 << " async_receive socket shutdown : OK");
-//	}
-
-	}
+	io_sys_context.run();
 	//listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in, s_tun_out, s_socket_in, s_socket_out, error, sd);
+
+	//	socket.get()->shutdown(ec);
+	//	if (ec) {
+	//		pfp_fact(TUN0 << " async_receive socket shutdown : " << ec.message());
+	//	} else {
+	//		pfp_fact(TUN0 << " async_receive socket shutdown : OK");
+	//	}
+
 }
