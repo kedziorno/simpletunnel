@@ -146,7 +146,7 @@ typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_
 typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
 
 //void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd);
-void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd, pcpp::RawPacketVector & packetVec);
+void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd);
 
 int tun_fd = -1;
 
@@ -372,10 +372,11 @@ int main(int argc, char *argv[])
 		if (dev == NULL) {
 			pfp_fact("PCAP++ Cannot find interface name " << TUN0);
 		} else {
-			pcpp::PcapLiveDevice::DeviceConfiguration dev_conf;
-			dev_conf.direction = pcpp::PcapLiveDevice::PcapDirection::PCPP_INOUT;
-			dev_conf.mode = pcpp::PcapLiveDevice::DeviceMode::Normal;
-			if (!dev->open(dev_conf)) {
+			//pcpp::PcapLiveDevice::DeviceConfiguration dev_conf;
+			//dev_conf.direction = pcpp::PcapLiveDevice::PcapDirection::PCPP_INOUT;
+			//dev_conf.mode = pcpp::PcapLiveDevice::DeviceMode::Normal;
+			//if (!dev->open(dev_conf)) {
+			if (!dev->open()) {
 				pfp_fact("PCAP++ Device " << TUN0 << " not opened ");
 			} else {
 				pfp_fact("PCAP++ Device " << TUN0 << " opened : OK");
@@ -392,8 +393,8 @@ int main(int argc, char *argv[])
 	// CTF depend from -w flag
 	if (write_to_pcap_file == 1) {
 		pfp_fact("PCAP++ start async capturing...");
-		PacketArrivedData data;
-		data.pcapWriter = &pcapWriter;
+		//PacketArrivedData data;
+		//data.pcapWriter = &pcapWriter;
 		//dev->startCapture(PacketArrive, &data);
 		dev->startCapture(packetVec);
 		if (dev->captureActive()) {
@@ -404,48 +405,47 @@ int main(int argc, char *argv[])
 
 	boost::asio::io_context io_sys_context;
 #ifdef PCAPPLUSPLUS
-	//boost::asio::io_context io_sys_context2;
 	//install the CTRL+... handler
-//	boost::asio::signal_set signal_(io_sys_context.get_executor(), SIGINT);
-//	signal_.async_wait([write_to_pcap_file,&dev,&pcapWriter,&packetVec,&packet_stats](const boost::system::error_code & error , int signal_number) {
-//		if (!error) {
-//			if (signal_number == 2) { // CTRL+C
-//				pfp_fact("Handling signal CTRL+C");
-//				if (write_to_pcap_file == 1) {
-//					pfp_fact("PCAP++ -w flag active, stop capturing ...");
-//					dev->stopCapture();
-//					if (!dev->captureActive()) {
-//						pfp_fact("PCAP++ capturing is offline");
-//						pfp_fact("PCAP++ parse " << packetVec.size() << " packets");
-//						for (pcpp::RawPacketVector::ConstVectorIterator iter = packetVec.begin(); iter != packetVec.end(); iter++) {
-//							pcpp::Packet parsedPacket(*iter);
-//							packet_stats.consumePacket(parsedPacket);
-//						}
-//						packet_stats.printToConsole();
-//						pfp_fact("PCAP++ -w flag is set so we write to file : " << PCAP_FILE << "");
-//						pfp_fact("PCAP++ write " << packetVec.size() << " packets");
-//						if (pcapWriter.writePackets(packetVec)) {
-//							pcap_stat pcap_s;
-//							pcapWriter.getStatistics(pcap_s);
-//							pfp_fact("PCAP++ has writted to .pcap file : " << pcap_s.ps_recv << " packets");
-//						} else {
-//							pfp_fact("PCAP++ problem with writting to .pcap file");
-//						}
-//					} else {
-//						pfp_fact("PCAP++ error with offline capturing - still capture ???");
-//					}
-//				} else {
-//					pfp_fact("PCAP++ -w flag off, so we dont parse packets");
-//				}
-//				pfp_fact("PCAP++ closing device " << TUN0);
-//				dev->close();
-//				exit(signal_number);
-//			}
-//		} else {
-//			pfp_fact("Error in signal_set async_wait signal : " << error.message());
-//		}
-//	});
-	//io_sys_context2.run();
+	boost::asio::signal_set signal_(io_sys_context.get_executor(), SIGINT);
+	signal_.async_wait([write_to_pcap_file,&dev,&pcapWriter,&packetVec,&packet_stats](const boost::system::error_code & error , int signal_number) {
+		if (!error) {
+			if (signal_number == 2) { // CTRL+C
+				pfp_fact("Handling signal CTRL+C");
+				if (write_to_pcap_file == 1) {
+					pfp_fact("PCAP++ -w flag active, stop capturing ...");
+					dev->stopCapture();
+					if (!dev->captureActive()) {
+						pfp_fact("PCAP++ capturing is offline");
+						pfp_fact("PCAP++ parse " << packetVec.size() << " packets");
+						for (pcpp::RawPacketVector::ConstVectorIterator iter = packetVec.begin(); iter != packetVec.end(); iter++) {
+							pcpp::Packet parsedPacket(*iter);
+							packet_stats.consumePacket(parsedPacket);
+						}
+						packet_stats.printToConsole();
+						pfp_fact("PCAP++ -w flag is set so we write to file : " << PCAP_FILE << "");
+						pfp_fact("PCAP++ write " << packetVec.size() << " packets");
+						if (pcapWriter.writePackets(packetVec)) {
+							pcap_stat pcap_s;
+							pcapWriter.getStatistics(pcap_s);
+							pfp_fact("PCAP++ has writted to .pcap file : " << pcap_s.ps_recv << " packets");
+						} else {
+							pfp_fact("PCAP++ problem with writting to .pcap file");
+						}
+					} else {
+						pfp_fact("PCAP++ error with offline capturing - still capture ???");
+					}
+				} else {
+					pfp_fact("PCAP++ -w flag off, so we dont parse packets");
+				}
+				pfp_fact("PCAP++ closing device " << TUN0);
+				dev->close();
+				exit(signal_number);
+			}
+		} else {
+			pfp_fact("Error in signal_set async_wait signal : " << error.message());
+		}
+	});
+	//io_sys_context.run_one();
 #endif
 
 	boost::asio::posix::stream_descriptor sd(io_sys_context, tun_fd);
@@ -626,7 +626,7 @@ int main(int argc, char *argv[])
 //			buffer.fill(0);
 //			//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
 //			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
-			listen_udp(m_ssl_context_udp, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd, packetVec);
+			listen_udp(m_ssl_context_udp, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			//io_sys_context.run(); // TODO herE?
 			if (error) {
@@ -930,7 +930,7 @@ int main(int argc, char *argv[])
 } // main
 
 // void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd)
-void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd, pcpp::RawPacketVector & packetVec) {
+void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd) {
 	boost::system::error_code ec;
 	buffer_ptr buffer;
 	boost::asio::mutable_buffer mb = boost::asio::buffer(buffer.data(), buffer.size());
@@ -952,7 +952,7 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 
 		buffer.fill(0);
 		//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
-	acceptor.async_accept(socket, mb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb,&packetVec](const boost::asio::error_code &ec, size_t size) {
+	acceptor.async_accept(socket, mb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&mb](const boost::asio::error_code &ec, size_t size) {
 		if(ec) {
 			pfp_fact("UDP in async - Error in Accept: " << ec.message());
 		} else {
@@ -960,7 +960,7 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 			//pfp_fact("async_accept size is : " << size);
 			//pfp_fact("async_accept buffer  : " << n_pfp::dbgstr_hex(mb.data(), mb.size())); // TODO cookie at 60 byte?
 			boost::asio::mutable_buffers_1 cb = boost::asio::mutable_buffers_1(buffer.data(), buffer.size());
-			socket.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&cb,&packetVec](const boost::system::error_code &error, size_t size) {
+			socket.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [&io_sys_context,&s_loop_idx,&s_tun_in,&s_tun_out,&s_socket_in,&s_socket_out,&error,&socket,&sd,&buffer,&cb](const boost::system::error_code &error, size_t size) {
 				if (error) {
 					pfp_fact("UDP Server async_handshake : " << error.message());
 				} else {
@@ -1018,10 +1018,10 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 							size_t sd_write = sd.write_some(mb, ec);
 							if (!ec) {
 								pfp_fact("Write " << sd_write << " bytes to fd=" << sd.native_handle() << ", dump : " << n_pfp::dbgstr_hex(mb.data(), sd_write));
-								struct timeval tp;
-								gettimeofday(&tp, NULL);
-								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), sd_write, tp, false);
-								packetVec.pushBack(&rp);
+//								struct timeval tp;
+//								gettimeofday(&tp, NULL);
+//								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), sd_write, tp, false);
+//								packetVec.pushBack(&rp);
 							} else {
 								pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 							}
@@ -1106,10 +1106,10 @@ void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio
 							size_t s_write = socket.send(mb, ec);
 							if (!ec) {
 								pfp_fact("Write " << s_write << " bytes to socket, dump : " << n_pfp::dbgstr_hex(mb.data(), s_write));
-								struct timeval tp;
-								gettimeofday(&tp, NULL);
-								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), s_write, tp, false);
-								packetVec.pushBack(&rp);
+//								struct timeval tp;
+//								gettimeofday(&tp, NULL);
+//								pcpp::RawPacket rp(static_cast<const uint8_t*>(mb.data()), s_write, tp, false);
+//								packetVec.pushBack(&rp);
 							} else {
 								pfp_fact("Error on write to socket : " << ec.message());
 							}
