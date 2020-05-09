@@ -435,11 +435,11 @@ int main(int argc, char *argv[])
 					} else {
 						pfp_fact("PCAP++ error with offline capturing - still capture ???");
 					}
+					pfp_fact("PCAP++ closing device " << TUN0);
+					dev->close();
 				} else {
 					pfp_fact("PCAP++ -w flag off, so we dont parse packets");
 				}
-				pfp_fact("PCAP++ closing device " << TUN0);
-				dev->close();
 				exit(signal_number);
 			}
 		} else {
