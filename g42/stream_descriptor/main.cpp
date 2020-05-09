@@ -914,18 +914,16 @@ int main(int argc, char *argv[])
 									pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 								}
 							}
-//							io_sys_context.run();
-//							io_sys_context.restart();
-					}
-						//io_sys_context.restart();
-						io_sys_context.run_one(ec);
-						if (ec) {
-							pfp_fact("io run: " << ec.message());
-						} else {
-							pfp_fact("io run : OK");
-						}
-						//io_sys_context.reset();
+							//io_sys_context.restart();
+							io_sys_context.run_one(ec);
+							if (ec) {
+								pfp_fact("io run: " << ec.message());
+							} else {
+								pfp_fact("io run : OK");
+							}
+							//io_sys_context.reset();
 					}; // loop
+					}
 				});
 				io_sys_context.run();
 			}
