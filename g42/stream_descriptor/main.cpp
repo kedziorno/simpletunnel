@@ -717,7 +717,7 @@ int main(int argc, char *argv[])
 				pfp_fact("TCP Connected to : " << it->host_name());
 			}
 
-//			client.lowest_layer().set_option(boost::asio::ip::tcp::no_delay(true));
+			client.lowest_layer().set_option(boost::asio::ip::tcp::no_delay(true));
 
 			client.set_verify_mode(boost::asio::ssl::verify_peer, ec);
 			if (ec) {
@@ -739,88 +739,89 @@ int main(int argc, char *argv[])
 				pfp_fact("TCP Client handshake : OK");
 
 				while (1) {
-					//io_sys_context.reset();
+					io_sys_context.reset();
 					pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
-
-//					std::array<unsigned char, BUFFER_SIZE> request1;
-//					request1.fill(0);
-//					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-//					client.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-//						if (!error) {
-//							pfp_fact("Read " << bytes_transferred << " bytes from socket");
-//							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), bytes_transferred));
-//							s_socket_in += bytes_transferred;
-//							boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
-//							boost::system::error_code ec;
-//							size_t sd_ws = sd.write_some(mb, ec);
-//							if (!ec) {
-//								pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
-//								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_ws));
-//								s_tun_out += sd_ws;
-//							} else {
-//								pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
-//							}
-//						} else {
-//							pfp_fact("Error on read from socket : " << error.message());
-//						}
-//					});
 
 					std::array<unsigned char, BUFFER_SIZE> request1;
 					request1.fill(0);
 					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-					size_t rsl = client.read_some(mb1, ec);
-					if (ec) {
-						pfp_fact("Error read_some on socket : " << ec.message());
-					} else {
-						pfp_fact("read_some " << rsl << " bytes from socket");
-						size_t sd_ws = sd.write_some(mb1, ec);
-						if (!ec) {
-							pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
+					client.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
+						if (!error) {
+							pfp_fact("Read " << bytes_transferred << " bytes from socket");
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), bytes_transferred));
+							s_socket_in += bytes_transferred;
+							boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
+							boost::system::error_code ec;
+							size_t sd_ws = sd.write_some(mb, ec);
+							if (!ec) {
+								pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_ws));
+								s_tun_out += sd_ws;
+							} else {
+								pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
+							}
 						} else {
-							pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
+							pfp_fact("Error on read from socket : " << error.message());
 						}
-					}
-//					std::array<unsigned char, BUFFER_SIZE> request2;
-//					request2.fill(0);
-//					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
-//					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&client,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-//						if (!error) {
-//							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
-//							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), bytes_transferred));
-//							s_tun_in += bytes_transferred;
-//							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
-//							boost::system::error_code ec;
-//							size_t ws2 = client.write_some(mb, ec);
-//							if (!ec) {
-//								pfp_fact("Write " << ws2 << " bytes to socket");
-//								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), ws2));
-//								s_socket_out += ws2;
-//							} else {
-//								pfp_fact("Error on write to socket : " << ec.message());
-//							}
+					});
+
+//					std::array<unsigned char, BUFFER_SIZE> request1;
+//					request1.fill(0);
+//					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
+//					size_t rsl = client.read_some(mb1, ec);
+//					if (ec) {
+//						pfp_fact("Error read_some on socket : " << ec.message());
+//					} else {
+//						pfp_fact("read_some " << rsl << " bytes from socket");
+//						size_t sd_ws = sd.write_some(mb1, ec);
+//						if (!ec) {
+//							pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
 //						} else {
-//							pfp_fact("Error on read from " << TUN0 << " : " << error.message());
+//							pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 //						}
-//					});
+//					}
 
 					std::array<unsigned char, BUFFER_SIZE> request2;
 					request2.fill(0);
 					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
-					size_t sdrl = sd.read_some(mb2, ec);
-					if (ec) {
-						pfp_fact("Error on read_some on tun : " << ec.message());
-					} else {
-						pfp_fact("read_some " << sdrl << " bytes from socket");
-						size_t s_ws = client.write_some(mb2, ec);
-						if (!ec) {
-							pfp_fact("Write " << s_ws << " bytes to socket");
+					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&client,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
+						if (!error) {
+							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
+							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), bytes_transferred));
+							s_tun_in += bytes_transferred;
+							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
+							boost::system::error_code ec;
+							size_t ws2 = client.write_some(mb, ec);
+							if (!ec) {
+								pfp_fact("Write " << ws2 << " bytes to socket");
+								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), ws2));
+								s_socket_out += ws2;
+							} else {
+								pfp_fact("Error on write to socket : " << ec.message());
+							}
 						} else {
-							pfp_fact("Error on write to socket : " << ec.message());
+							pfp_fact("Error on read from " << TUN0 << " : " << error.message());
 						}
-					}
+					});
 
-					io_sys_context.run_one();
-					//io_sys_context.restart();
+//					std::array<unsigned char, BUFFER_SIZE> request2;
+//					request2.fill(0);
+//					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
+//					size_t sdrl = sd.read_some(mb2, ec);
+//					if (ec) {
+//						pfp_fact("Error on read_some on tun : " << ec.message());
+//					} else {
+//						pfp_fact("read_some " << sdrl << " bytes from socket");
+//						size_t s_ws = client.write_some(mb2, ec);
+//						if (!ec) {
+//							pfp_fact("Write " << s_ws << " bytes to socket");
+//						} else {
+//							pfp_fact("Error on write to socket : " << ec.message());
+//						}
+//					}
+
+					io_sys_context.run();
+					io_sys_context.restart();
 				} // loop
 			} // tcp client handshake ok
 		} // client SSL_TCP
