@@ -21,6 +21,7 @@
 
 #include "pfplog.hpp"
 #include "dbgstr.hpp"
+#include "tun_device.hpp"
 
 #ifdef PCAPPLUSPLUS
 #include "RawPacket.h"
@@ -187,172 +188,16 @@ int main(int argc, char *argv[])
 		exit(2);
 	}
 
-	unsigned int tun_exists = if_nametoindex(TUN0);
-	if (tun_exists == 0) { // we dont have tun with TUN0 name
-		tun_fd = open("/dev/net/tun", O_RDWR);
-		if (tun_fd < 0) {
-			pfp_fact("Tun open : " << strerror(errno));
-			return tun_fd;
-		} else {
-			pfp_fact("Tun open with fd=" << tun_fd);
-		}
-
-		// set type
-		struct ifreq if_tun = { 0 };
-		if_tun.ifr_flags = IFF_TUN;
-		//if_tun.ifr_flags = IFF_TAP;
-		memcpy(&if_tun.ifr_name, TUN0, IFNAMSIZ);
-		if (ioctl(tun_fd, TUNSETIFF, &if_tun) < 0) {
-			pfp_fact("Tun ioctl : " << strerror(errno));
-			return tun_fd;
-		} else {
-			pfp_fact("Tun ioctl : ok");
-			if_index = if_nametoindex(TUN0);
-		}
-
-		pfp_fact("Tun ifindex : " << if_index);
-
-		// XXX queue ?
-//		struct ifreq if_queue = { 0 };
-//		if_queue.ifr_ifindex = if_index;
-//		if_queue.ifr_flags = IFF_ATTACH_QUEUE;
-//		memcpy(&if_queue.ifr_name, TUN0, IFNAMSIZ);
-//		if (ioctl(tun_fd, TUNSETQUEUE, &if_queue) < 0) {
-//			pfp_fact("Tun attach queue : " << strerror(errno));
-//		} else {
-//			pfp_fact("Tun attach queue : OK");
-//		}
-
-		s = socket(AF_INET6, SOCK_DGRAM, 0);
-		if (s < 0) {
-			pfp_fact("socket AF_INET6 : " << strerror(errno));
-			return s;
-		} else {
-			pfp_fact("socket AF_INET6 : " << s);
-		}
-
-		// XXX TODO if we dont have up and running tun, we try to configure in loop
-		while (1) {
-			struct ifreq if_up = { 0 };
-			memcpy(&if_up.ifr_name, TUN0, IFNAMSIZ);
-			if_up.ifr_ifindex = if_index;
-			if (ioctl(s, SIOCGIFFLAGS, &if_up) < 0) {
-				pfp_fact("Tun get flags : " << strerror(errno));
-			} else {
-				pfp_fact("Tun get flags : OK");
-			}
-			if (!(if_up.ifr_flags & IFF_UP) && !(if_up.ifr_flags & IFF_RUNNING)) {
-				struct ifreq if_flag_up_running = { 0 };
-				memcpy(&if_flag_up_running.ifr_name, TUN0, IFNAMSIZ);
-				if_flag_up_running.ifr_flags |= IFF_UP | IFF_RUNNING;
-				if_flag_up_running.ifr_ifindex = if_index;
-				if (ioctl(s, SIOCSIFFLAGS, &if_flag_up_running) < 0) {
-					pfp_fact("Tun flags to UP : " << strerror(errno));
-				} else {
-					pfp_fact("Tun flags to UP : ok");
-				}
-			} else {
-				pfp_fact("We have setting UP flags on " << TUN0);
-				break;
-			}
-			sleep(1);
-		}
-
-		// info mac
-		struct ifreq if_mac = { 0 };
-		if_mac.ifr_ifindex = if_index;
-		memcpy(&if_mac.ifr_name, TUN0, IFNAMSIZ);
-		if (ioctl(s, SIOCGIFHWADDR, &if_mac) < 0) {
-			pfp_fact("Tun hwaddr : " << strerror(errno));
-		} else {
-			pfp_fact("Tun hwaddr = " << n_pfp::dbgstr_hex(if_mac.ifr_hwaddr.sa_data, IFHWADDRLEN));
-		}
-
-		// ipv6
-		struct in6_ifreq ifr6 = { 0 };
-		struct sockaddr_in6 sai = { 0 };
-		sai.sin6_family = AF_INET6;
-		sai.sin6_port = 0;
-		int ipv6_addr_type;
-
-		if (cs == SERVER) { // ipv6 S
-			ipv6_addr_type = inet_pton(AF_INET6, IPV6SERVER, (void *)&sai.sin6_addr);
-			if(ipv6_addr_type <= 0) {
-				pfp_fact("Bad server address to convert : " << IPV6SERVER);
-				return -1;
-			} else {
-				pfp_fact("Server address : " << IPV6SERVER);
-			}
-		}
-
-		if (cs == CLIENT) { // ipv6 C
-			ipv6_addr_type = inet_pton(AF_INET6, IPV6CLIENT, (void *)&sai.sin6_addr);
-			if(ipv6_addr_type <= 0) {
-				pfp_fact("Bad client address to convert : " << IPV6CLIENT);
-				return -1;
-			} else {
-				pfp_fact("Client address : " << IPV6CLIENT);
-			}
-		}
-
-		// set addr ipv6 type SERVER/CLIENT
-		ifr6.ifr6_prefixlen = 16;
-		memcpy((char *) &ifr6.ifr6_addr, (char *) &sai.sin6_addr, sizeof(struct in6_addr));
-		ifr6.ifr6_ifindex = if_index;
-		if (ioctl(s, SIOCSIFADDR, &ifr6) < 0) {
-			pfp_fact("Tun set IPv6 : " << strerror(errno));
-		} else {
-			pfp_fact("Tun set IPv6 : ok");
-		}
-
-		// set MTU
-		struct ifreq if_mtu = { 0 };
-		if_mtu.ifr_ifindex = if_index;
-		if_mtu.ifr_mtu = TUN_MTU;
-		memcpy(&if_mtu.ifr_name, TUN0, IFNAMSIZ);
-		if (ioctl(s, SIOCSIFMTU, &if_mtu) < 0) {
-			pfp_fact("Tun mtu : " << strerror(errno));
-		} else {
-			pfp_fact("Tun mtu = " << if_mtu.ifr_mtu);
-		}
-
-		// XXX TODO whaT?
-		if (delete_flag) {
-			/* remove persistent status */
-			if (ioctl(tun_fd, TUNSETPERSIST, 0) < 0) {
-				pfp_fact("disabling TUNSETPERSIST : " << strerror(errno));
-				exit(1);
-			}
-			pfp_fact("Set " << TUN0 << " nonpersistent");
-		} else {
-			if (owner == -1 && group == -1) {
-				owner = geteuid();
-			}
-			if (owner != -1) {
-				if (ioctl(tun_fd, TUNSETOWNER, owner) < 0) {
-					pfp_fact("TUNSETOWNER : " << strerror(errno));
-					exit(1);
-				}
-			}
-			if (group != -1) {
-				if (ioctl(tun_fd, TUNSETGROUP, group) < 0) {
-					pfp_fact("TUNSETGROUP : " << strerror(errno));
-					exit(1);
-				}
-			}
-			if (ioctl(tun_fd, TUNSETPERSIST, 1) < 0) {
-				pfp_fact("enabling TUNSETPERSIST : " << strerror(errno));
-				exit(1);
-			}
-			pfp_fact("Set " << TUN0 << " persistent");
-			if(owner != -1)
-					pfp_fact("owned by uid " << owner);
-			if(group != -1)
-					pfp_fact("owned by gid " << group);
-		}
-	} else {
-		pfp_fact("Interface " << TUN0 << " exists");
+	std::string ipv6address;
+	if (cs == SERVER) { // ipv6 S
+		ipv6address = IPV6SERVER;
 	}
+
+	if (cs == CLIENT) { // ipv6 C
+		ipv6address = IPV6CLIENT;
+	}
+
+	tun_device tun(TUN0, IFF_TUN, IFF_UP | IFF_RUNNING, ipv6address, TUN_MTU);
 
 #ifdef PCAPPLUSPLUS
 	// open .pcap file depend from -w flag
@@ -449,7 +294,7 @@ int main(int argc, char *argv[])
 	//io_sys_context.run_one();
 #endif
 
-	boost::asio::posix::stream_descriptor sd(io_sys_context, tun_fd);
+	boost::asio::posix::stream_descriptor sd(io_sys_context, tun.get_file_descriptor());
 
 	boost::system::error_code ec;
 	boost::system::error_code error;
