@@ -513,9 +513,7 @@ int main(int argc, char *argv[])
 //				} else {
 //					pfp_fact("UDP Client Connected to : " << it->host_name());
 //				}
-//				client.async_handshake(boost::asio::ssl::stream_base::handshake_type::client, buffer,\
-//				[&buffer_data,&s_loop_idx,&s_socket_in,&s_socket_out,&s_tun_in,&s_tun_out,&sd,&client,&io_sys_context]\
-//				(const boost::system::error_code & error, size_t bytes_transferred){
+//				client.async_handshake(boost::asio::ssl::stream_base::handshake_type::client, buffer,[&buffer_data,&s_loop_idx,&s_socket_in,&s_socket_out,&s_tun_in,&s_tun_out,&sd,&client,&io_sys_context](const boost::system::error_code & error, size_t bytes_transferred){
 //					if (error) {
 //						pfp_fact("UDP Client async handshake failed : " << error.message());
 //					} else {
@@ -625,6 +623,7 @@ int main(int argc, char *argv[])
 	} // CS_CLIENT
 } // main
 }
+
 
 // void listen_udp(boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> & acceptor, dtls_sock_ptr socket, buffer_ptr buffer, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd)
 //void listen_udp(boost::asio::ssl::dtls::context & m_ssl_context_udp, boost::asio::io_context & io_sys_context, int s_loop_idx, int s_tun_in, int s_tun_out, int s_socket_in, int s_socket_out, boost::system::error_code & error, boost::asio::posix::stream_descriptor & sd) {
