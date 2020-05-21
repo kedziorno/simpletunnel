@@ -24,6 +24,8 @@
 #include "tun_device.hpp"
 #include "tcp_ssl_context.hpp"
 #include "udp_dtls_context.hpp"
+#include "config.hpp"
+#include "server_tcp.hpp"
 
 #ifdef PCAPPLUSPLUS
 #include "RawPacket.h"
@@ -31,19 +33,6 @@
 #include "PcapFileDevice.h"
 #include "PcapLiveDeviceList.h"
 #endif
-
-#define TUN0 "tun1" // TODO we use vpn?
-#define IPV6SERVER "fd42::1"
-#define SERVER 1
-#define IPV6CLIENT "fd42::2"
-#define CLIENT 0
-#define CS_PORT 9042
-//#define BUFFER_SIZE ETH_FRAME_LEN
-#define BUFFER_SIZE 65535
-#define TUN_MTU 1304
-#define SSL_TCP 0
-#define SSL_UDP 1
-#define PCAP_FILE "g42_tun"
 
 #ifdef PCAPPLUSPLUS
 struct PacketStats {
@@ -296,118 +285,20 @@ int main(int argc, char *argv[])
 	//io_sys_context.run_one();
 #endif
 
-	boost::asio::posix::stream_descriptor sd(io_sys_context, tun.get_file_descriptor());
+	// ok
+	boost::asio::io_context ioc2;
+	boost::asio::posix::stream_descriptor sd(ioc2, 0);
 
 	boost::system::error_code ec;
 	boost::system::error_code error;
 
 	if (cs == SERVER) { // server mode
-		if (ssl_tcp_udp == SSL_TCP) { // s tcp mode
+		if (ssl_tcp_udp == SSL_TCP) {
 			pfp_fact("SERVER TCP...");
-
 			tcp_ssl_context tcp_ctx;
-
-			boost::asio::ip::tcp::endpoint ep;
-			ssl_socket_tcp socket_tcp(io_sys_context, tcp_ctx.get_ssl_context());
-			boost::asio::ip::tcp::acceptor acceptor(io_sys_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), CS_PORT));
-			acceptor.accept(socket_tcp.lowest_layer(), ep, error);
-			if (!error) {
-				pfp_fact("TCP Accept from : " << ep.address().to_string());
-			} else {
-				pfp_fact("TCP Accept error : " << error.message());
-			}
-			socket_tcp.lowest_layer().set_option(boost::asio::ip::tcp::no_delay(true));
-			socket_tcp.handshake(boost::asio::ssl::stream_base::server, error);
-			if (error) {
-				pfp_fact("TCP Server handshake : " << error.message());
-			} else {
-				pfp_fact("TCP Server handshake : OK");
-				while(1) {
-					io_sys_context.reset();
-					pfp_fact("Loop [" << ++s_loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << s_tun_in << "/" << s_tun_out << "/" << s_socket_in << "/" << s_socket_out << ")");
-
-					std::array<unsigned char, BUFFER_SIZE> request1;
-					request1.fill(0);
-					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-					socket_tcp.async_read_some(mb1, [&s_socket_in,&s_tun_out,&sd,&mb1] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-						if (!error) {
-							pfp_fact("Read " << bytes_transferred << " bytes from socket");
-							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb1.data(), bytes_transferred));
-							s_socket_in += bytes_transferred;
-							boost::asio::mutable_buffer mb = boost::asio::buffer(mb1.data(), bytes_transferred);
-							boost::system::error_code ec;
-							size_t sd_ws = sd.write_some(mb, ec);
-							if (!ec) {
-								pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
-								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), sd_ws));
-								s_tun_out += sd_ws;
-							} else {
-								pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
-							}
-						} else {
-							pfp_fact("Error on read from socket : " << error.message());
-						}
-					});
-
-//					std::array<unsigned char, BUFFER_SIZE> request1;
-//					request1.fill(0);
-//					boost::asio::mutable_buffer mb1 = boost::asio::buffer(request1, BUFFER_SIZE);
-//					size_t rsl = socket_tcp.read_some(mb1, ec);
-//					if (ec) {
-//						pfp_fact("Error read_some on socket : " << ec.message());
-//					} else {
-//						pfp_fact("read_some " << rsl << " bytes from socket");
-//						size_t sd_ws = sd.write_some(mb1, ec);
-//						if (!ec) {
-//							pfp_fact("Write " << sd_ws << " bytes to fd=" << sd.native_handle());
-//						} else {
-//							pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
-//						}
-//					}
-
-					std::array<unsigned char, BUFFER_SIZE> request2;
-					request2.fill(0);
-					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
-					sd.async_read_some(mb2, [&s_tun_in,&s_socket_out,&sd,&socket_tcp,&mb2] (const boost::system::error_code& error, std::size_t bytes_transferred) {
-						if (!error) {
-							pfp_fact("Read " << bytes_transferred << " bytes from fd=" << sd.native_handle());
-							pfp_fact("dump : " << n_pfp::dbgstr_hex(mb2.data(), bytes_transferred));
-							s_tun_in += bytes_transferred;
-							boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
-							boost::system::error_code ec;
-							size_t s_ws = socket_tcp.write_some(mb, ec);
-							if (!ec) {
-								pfp_fact("Write " << s_ws << " bytes to socket");
-								pfp_fact("dump : " << n_pfp::dbgstr_hex(mb.data(), s_ws));
-								s_socket_out += s_ws;
-							} else {
-								pfp_fact("Error on write to socket : " << ec.message());
-							}
-						} else {
-							pfp_fact("Error on read from " << TUN0 << " : " << error.message());
-						}
-					});
-
-//					std::array<unsigned char, BUFFER_SIZE> request2;
-//					request2.fill(0);
-//					boost::asio::mutable_buffer mb2 = boost::asio::buffer(request2, BUFFER_SIZE);
-//					size_t sdrl = sd.read_some(mb2, ec);
-//					if (ec) {
-//						pfp_fact("Error on read_some on tun : " << ec.message());
-//					} else {
-//						pfp_fact("read_some " << sdrl << " bytes from socket");
-//						size_t s_ws = socket_tcp.write_some(mb2, ec);
-//						if (!ec) {
-//							pfp_fact("Write " << s_ws << " bytes to socket");
-//						} else {
-//							pfp_fact("Error on write to socket : " << ec.message());
-//						}
-
-					io_sys_context.run();
-					io_sys_context.restart();
-				} // loop
-			} // handshake ok
-		} // SERVER SSL_TCP
+			server_tcp server(io_sys_context, tcp_ctx.get_ssl_context(), tun.get_file_descriptor());
+			server.run();
+		}
 
 		if (ssl_tcp_udp == SSL_UDP) { // s udp mode
 			pfp_fact("SERVER UDP...");
@@ -434,6 +325,8 @@ int main(int argc, char *argv[])
 //			buffer.fill(0);
 //			//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
 //			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
+
+			// 000000000000
 			listen_udp(udp_ctx.get_udp_context(), io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			//io_sys_context.run(); // TODO herE?
