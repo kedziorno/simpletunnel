@@ -3,6 +3,19 @@
 
 #include <string>
 
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <linux/if_tun.h>
+#include <linux/if_ether.h>
+#include <linux/ipv6.h>
+
 #define DEFAULT_TUN_NAME "tun0"
 
 class tun_device

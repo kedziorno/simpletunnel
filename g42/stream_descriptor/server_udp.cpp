@@ -9,8 +9,8 @@ server_udp::server_udp(boost::asio::io_context &io_context, boost::asio::ssl::dt
 			m_io_context(&io_context),
 			m_dtls_context(&dtls_context),
 			m_endpoint(boost::asio::ip::udp::v4(), CS_PORT),
-			m_acceptor(*m_io_context, m_endpoint),
-			m_socket_udp_dtls(*m_io_context, *m_dtls_context)
+			m_socket_udp_dtls(*m_io_context, *m_dtls_context),
+			m_acceptor(*m_io_context, m_endpoint)
 {
 	try {
 		m_stream_descriptor = std::make_unique<boost::asio::posix::stream_descriptor>(*m_io_context, tun_descriptor);
@@ -34,12 +34,14 @@ void server_udp::run()
 	std::array<unsigned char,BUFFER_SIZE> buffer;
 	boost::asio::mutable_buffer mb = boost::asio::buffer(buffer.data(), buffer.size());
 	m_acceptor.async_accept(m_socket_udp_dtls, mb, [&](const boost::asio::error_code &ec, size_t size) {
+		(void)size;
 		if(ec) {
 			pfp_fact("Error in async_accept : " << ec.message());
 		} else {
 			pfp_fact("UDP in async - Accept : OK");
 			boost::asio::mutable_buffers_1 cb = boost::asio::mutable_buffers_1(buffer.data(), buffer.size());
 			m_socket_udp_dtls.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [=](const boost::system::error_code &error, size_t size) {
+				(void)size;
 				if (error) {
 					pfp_fact("UDP Server async_handshake : " << error.message());
 				} else {
