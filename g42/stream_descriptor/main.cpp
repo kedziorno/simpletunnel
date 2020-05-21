@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
 	//io_sys_context.run_one();
 #endif
 
-	if (cs == SERVER) { // server mode
+	if (cs == SERVER) {
 		if (ssl_tcp_udp == SSL_TCP) {
 			pfp_fact("SERVER TCP...");
 			tcp_ssl_context tcp_ctx;
@@ -245,27 +245,27 @@ int main(int argc, char *argv[])
 			server.run();
 		}
 
-		if (ssl_tcp_udp == SSL_UDP) { // s udp mode
+		if (ssl_tcp_udp == SSL_UDP) {
 			pfp_fact("SERVER UDP...");
 			udp_dtls_context udp_ctx;
 			server_udp server(io_sys_context, udp_ctx.get_udp_context(), tun.get_file_descriptor());
 			server.run();
-		} // SSL_UDP
-	} // CS SERVER
+		}
+	}
 
-	if (cs == CLIENT) { // client mode
-		if (ssl_tcp_udp == SSL_TCP) { // c tcp mode
+	if (cs == CLIENT) {
+		if (ssl_tcp_udp == SSL_TCP) {
 			pfp_fact("CLIENT TCP...");
 			tcp_ssl_context tcp_ctx;
 			client_tcp client(io_sys_context, tcp_ctx.get_ssl_context(), tun.get_file_descriptor(), remote_ip);
 			client.run();
 		}
 
-		if (ssl_tcp_udp == SSL_UDP) { // c udp mode
+		if (ssl_tcp_udp == SSL_UDP) {
 			pfp_fact("CLIENT UDP...");
 			udp_dtls_context udp_ctx;
 			client_udp client(io_sys_context, udp_ctx.get_udp_context(), tun.get_file_descriptor(), remote_ip);
 			client.run();
-		} // SSL_UDP
-	} // CS_CLIENT
-} // main
+		}
+	}
+}
