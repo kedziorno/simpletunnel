@@ -26,6 +26,7 @@
 #include "udp_dtls_context.hpp"
 #include "config.hpp"
 #include "server_tcp.hpp"
+#include "server_udp.hpp"
 
 #ifdef PCAPPLUSPLUS
 #include "RawPacket.h"
@@ -294,6 +295,7 @@ int main(int argc, char *argv[])
 
 	if (cs == SERVER) { // server mode
 		if (ssl_tcp_udp == SSL_TCP) {
+
 			pfp_fact("SERVER TCP...");
 			tcp_ssl_context tcp_ctx;
 			server_tcp server(io_sys_context, tcp_ctx.get_ssl_context(), tun.get_file_descriptor());
@@ -302,9 +304,11 @@ int main(int argc, char *argv[])
 
 		if (ssl_tcp_udp == SSL_UDP) { // s udp mode
 			pfp_fact("SERVER UDP...");
-			typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
+//			typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
 
 			udp_dtls_context udp_ctx;
+			server_udp server(io_sys_context, udp_ctx.get_udp_context(), tun.get_file_descriptor());
+			server.run();
 
 //			boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
 //			boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
@@ -327,7 +331,7 @@ int main(int argc, char *argv[])
 //			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			// 000000000000
-			listen_udp(udp_ctx.get_udp_context(), io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
+			//listen_udp(udp_ctx.get_udp_context(), io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			//io_sys_context.run(); // TODO herE?
 //			if (error) {

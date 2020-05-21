@@ -12,7 +12,7 @@ server_tcp::server_tcp(boost::asio::io_context &io_context, boost::asio::ssl::co
 			m_acceptor(*m_io_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), CS_PORT))
 {
 	try {
-	m_stream_descriptor = std::make_unique<boost::asio::posix::stream_descriptor>(*m_io_context, tun_descriptor);
+		m_stream_descriptor = std::make_unique<boost::asio::posix::stream_descriptor>(*m_io_context, tun_descriptor);
 	} catch(boost::exception & be) {
 		pfp_fact("Exception : " << boost::diagnostic_information(be));
 	}
