@@ -454,34 +454,10 @@ int main(int argc, char *argv[])
 			pfp_fact("TCP Client connect to : " << query.host_name() << ":" << query.service_name());
 
 			typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
-			boost::asio::ssl::context m_ssl_context_tcp(boost::asio::ssl::context::sslv23);
 
-			m_ssl_context_tcp.load_verify_file("server.pem", ec);
-			if (ec) {
-				pfp_fact("TCP SSL load verify file : " << ec.message());
-			} else {
-				pfp_fact("TCP SSL load verify file : OK");
-			}
-			m_ssl_context_tcp.use_certificate_chain_file("server.pem", ec);
-			if (ec) {
-				pfp_fact("TCP SSL use certificate chain file : " << ec.message());
-			} else {
-				pfp_fact("TCP SSL use certificate chain file : OK");
-			}
-			m_ssl_context_tcp.use_private_key_file("server.pem", boost::asio::ssl::context::pem, ec);
-			if (ec) {
-				pfp_fact("TCP SSL use private key file : " << ec.message());
-			} else {
-				pfp_fact("TCP SSL use private key file : OK");
-			}
-			m_ssl_context_tcp.use_tmp_dh_file("dh2048.pem", ec);
-			if (ec) {
-				pfp_fact("TCP SSL use tmp dh file : " << ec.message());
-			} else {
-				pfp_fact("TCP SSL use tmp dh file : OK");
-			}
+			tcp_ssl_context tcp_ctx;
 
-			ssl_socket_tcp client(io_sys_context, m_ssl_context_tcp);
+			ssl_socket_tcp client(io_sys_context, tcp_ctx.get_ssl_context());
 
 			boost::asio::connect(client.lowest_layer(), it, ec);
 			if (ec) {
@@ -608,37 +584,13 @@ int main(int argc, char *argv[])
 				pfp_fact("UDP Client cannot resolve the query " << query.host_name() << "/" << query.service_name() << " : " << ec.message());
 			} else {
 				pfp_fact("UDP Client resolver resolv the : " << it->endpoint().address().to_string() << ":" << it->endpoint().port());
-				boost::asio::ssl::dtls::context m_ssl_context_udp(boost::asio::ssl::dtls::context::dtls_client);
 
-				m_ssl_context_udp.load_verify_file("server.pem", ec);
-				if (ec) {
-					pfp_fact("UDP Client SSL load verify file : " << ec.message());
-				} else {
-					pfp_fact("UDP Client SSL load verify file : OK");
-				}
-				m_ssl_context_udp.use_certificate_chain_file("server.pem", ec);
-				if (ec) {
-					pfp_fact("UDP Client SSL use certificate chain file : " << ec.message());
-				} else {
-					pfp_fact("UDP Client SSL use certificate chain file : OK");
-				}
-				m_ssl_context_udp.use_private_key_file("server.pem", boost::asio::ssl::context::pem, ec);
-				if (ec) {
-					pfp_fact("UDP Client SSL use private key file : " << ec.message());
-				} else {
-					pfp_fact("UDP Client SSL use private key file : OK");
-				}
-				m_ssl_context_udp.use_tmp_dh_file("dh2048.pem", ec);
-				if (ec) {
-					pfp_fact("UDP Client SSL use tmp dh file : " << ec.message());
-				} else {
-					pfp_fact("UDP Client SSL use tmp dh file : OK");
-				}
+				udp_dtls_context udp_ctx;
 
 				std::array<char, BUFFER_SIZE> buffer_data{0};
 				boost::asio::const_buffer buffer(buffer_data.data(), buffer_data.size());
 
-				ssl_socket_udp client(io_sys_context, m_ssl_context_udp);
+				ssl_socket_udp client(io_sys_context, udp_ctx.get_udp_context());
 
 				client.set_verify_mode(boost::asio::ssl::verify_peer, ec);
 				if (ec) {

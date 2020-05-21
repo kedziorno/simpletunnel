@@ -11,11 +11,12 @@ public:
 	boost::asio::ssl::context & get_ssl_context();
 
 private:
-	void tcp_ssl_set_options();
-	void tcp_ssl_set_password_callback();
-	void tcp_ssl_use_certificate_chain_file();
-	void tcp_ssl_use_private_key_file();
-	void tcp_ssl_use_tmp_dh_file();
+	void set_options();
+	void set_password_callback();
+	void use_certificate_chain_file();
+	void use_private_key_file();
+	void use_tmp_dh_file();
+	void use_verify_key_file();
 
 	void throw_after_error_code(const std::string & message);
 

@@ -17,6 +17,7 @@ private:
 	void use_certificate_file();
 	void use_private_key_file();
 	void use_tmp_dh_file();
+	void use_verify_key_file();
 
 	void throw_after_error_code(const std::string & message);
 

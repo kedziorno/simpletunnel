@@ -6,11 +6,12 @@ tcp_ssl_context::tcp_ssl_context()
 	:
 			m_tcp_ssl_context(boost::asio::ssl::context::sslv23)
 {
-	tcp_ssl_set_options();
-	tcp_ssl_set_password_callback();
-	tcp_ssl_use_certificate_chain_file();
-	tcp_ssl_use_private_key_file();
-	tcp_ssl_use_tmp_dh_file();
+	set_options();
+	set_password_callback();
+	use_certificate_chain_file();
+	use_private_key_file();
+	use_tmp_dh_file();
+	use_verify_key_file();
 }
 
 boost::asio::ssl::context & tcp_ssl_context::get_ssl_context()
@@ -18,12 +19,12 @@ boost::asio::ssl::context & tcp_ssl_context::get_ssl_context()
 	return m_tcp_ssl_context;
 }
 
-void tcp_ssl_context::tcp_ssl_set_options() {
+void tcp_ssl_context::set_options() {
 	m_tcp_ssl_context.set_options(boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::single_dh_use, m_error_code);
 	throw_after_error_code(__func__);
 }
 
-void tcp_ssl_context::tcp_ssl_set_password_callback()
+void tcp_ssl_context::set_password_callback()
 {
 	m_tcp_ssl_context.set_password_callback([](std::size_t ml, boost::asio::ssl::context::password_purpose purpose) -> std::string {
 		(void)ml;
@@ -33,21 +34,27 @@ void tcp_ssl_context::tcp_ssl_set_password_callback()
 	throw_after_error_code(__func__);
 }
 
-void tcp_ssl_context::tcp_ssl_use_certificate_chain_file()
+void tcp_ssl_context::use_certificate_chain_file()
 {
 	m_tcp_ssl_context.use_certificate_chain_file("server.pem", m_error_code);
 	throw_after_error_code(__func__);
 }
 
-void tcp_ssl_context::tcp_ssl_use_private_key_file()
+void tcp_ssl_context::use_private_key_file()
 {
 	m_tcp_ssl_context.use_private_key_file("server.pem", boost::asio::ssl::context::pem, m_error_code);
 	throw_after_error_code(__func__);
 }
 
-void tcp_ssl_context::tcp_ssl_use_tmp_dh_file()
+void tcp_ssl_context::use_tmp_dh_file()
 {
 	m_tcp_ssl_context.use_tmp_dh_file("dh2048.pem", m_error_code);
+	throw_after_error_code(__func__);
+}
+
+void tcp_ssl_context::use_verify_key_file()
+{
+	m_tcp_ssl_context.load_verify_file("server.pem", m_error_code);
 	throw_after_error_code(__func__);
 }
 

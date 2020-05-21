@@ -52,6 +52,11 @@ void udp_dtls_context::use_tmp_dh_file()
 	throw_after_error_code(__func__);
 }
 
+void udp_dtls_context::use_verify_key_file()
+{
+	m_udp_dtls_context.load_verify_file("server.pem", m_error_code);
+	throw_after_error_code(__func__);
+}
 
 void udp_dtls_context::throw_after_error_code(const std::string & message)
 {
