@@ -22,6 +22,8 @@
 #include "pfplog.hpp"
 #include "dbgstr.hpp"
 #include "tun_device.hpp"
+#include "tcp_ssl_context.hpp"
+#include "udp_dtls_context.hpp"
 
 #ifdef PCAPPLUSPLUS
 #include "RawPacket.h"
@@ -141,8 +143,8 @@ bool verifyCookie(const std::string &cookie, const boost::asio::ip::udp::endpoin
 	return (cookie == "deafbeefcafe");
 }
 
-typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> dtls_sock;
-typedef std::shared_ptr<dtls_sock> dtls_sock_ptr;
+//typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> dtls_sock;
+//typedef std::shared_ptr<dtls_sock> dtls_sock_ptr;
 typedef std::array<unsigned char,BUFFER_SIZE> buffer_ptr;
 typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
 typedef boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_socket_tcp;
@@ -302,48 +304,11 @@ int main(int argc, char *argv[])
 	if (cs == SERVER) { // server mode
 		if (ssl_tcp_udp == SSL_TCP) { // s tcp mode
 			pfp_fact("SERVER TCP...");
-			boost::asio::ssl::context m_ssl_context_tcp(boost::asio::ssl::context::sslv23);
 
-			boost::system::error_code ec_1;
-			m_ssl_context_tcp.set_options(boost::asio::ssl::context::default_workarounds | boost::asio::ssl::context::no_sslv2 | boost::asio::ssl::context::single_dh_use, ec_1);
-			if (ec_1) {
-				pfp_fact("TCP SSL set context : " << ec_1.message());
-			} else {
-				pfp_fact("TCP SSL set context : OK");
-			}
-			boost::system::error_code ec_2;
-			m_ssl_context_tcp.set_password_callback([](std::size_t ml, boost::asio::ssl::context::password_purpose purpose) -> std::string {
-				return "text"; // TODO set password
-			}, ec_2);
-			if (ec_2) {
-				pfp_fact("TCP SSL set password callback : " << ec_2.message());
-			} else {
-				pfp_fact("TCP SSL set password callback : OK");
-			}
-			boost::system::error_code ec_3;
-			m_ssl_context_tcp.use_certificate_chain_file("server.pem", ec_3);
-			if (ec_3) {
-				pfp_fact("TCP SSL use certificate file : " << ec_3.message());
-			} else {
-				pfp_fact("TCP SSL use certificate file : OK");
-			}
-			boost::system::error_code ec_4;
-			m_ssl_context_tcp.use_private_key_file("server.pem", boost::asio::ssl::context::pem, ec_4);
-			if (ec_4) {
-				pfp_fact("TCP SSL use private file : " << ec_4.message());
-			} else {
-				pfp_fact("TCP SSL use private file : OK");
-			}
-			boost::system::error_code ec_5;
-			m_ssl_context_tcp.use_tmp_dh_file("dh2048.pem", ec_5);
-			if (ec_5) {
-				pfp_fact("TCP SSL use tmp dh file : " << ec_5.message());
-			} else {
-				pfp_fact("TCP SSL use tmp dh file : OK");
-			}
+			tcp_ssl_context tcp_ctx;
 
 			boost::asio::ip::tcp::endpoint ep;
-			ssl_socket_tcp socket_tcp(io_sys_context, m_ssl_context_tcp);
+			ssl_socket_tcp socket_tcp(io_sys_context, tcp_ctx.get_ssl_context());
 			boost::asio::ip::tcp::acceptor acceptor(io_sys_context, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), CS_PORT));
 			acceptor.accept(socket_tcp.lowest_layer(), ep, error);
 			if (!error) {
@@ -447,45 +412,8 @@ int main(int argc, char *argv[])
 		if (ssl_tcp_udp == SSL_UDP) { // s udp mode
 			pfp_fact("SERVER UDP...");
 			typedef boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket> ssl_socket_udp;
-			boost::asio::ssl::dtls::context m_ssl_context_udp(boost::asio::ssl::dtls::context::dtls_server);
 
-			boost::system::error_code ec_1;
-			m_ssl_context_udp.set_options(boost::asio::ssl::dtls::context::cookie_exchange, ec_1);
-			if (ec_1) {
-				pfp_fact("UDP SSL set options : " << ec_1.message());
-			} else {
-				pfp_fact("UDP SSL set options : OK");
-			}
-			boost::system::error_code ec_2;
-			m_ssl_context_udp.set_password_callback([](std::size_t ml, boost::asio::ssl::context::password_purpose purpose) -> std::string {
-				return "text"; // TODO set password
-			}, ec_2);
-			if (ec_2) {
-				pfp_fact("UDP SSL set password callback : " << ec_2.message());
-			} else {
-				pfp_fact("UDP SSL set password callback : OK");
-			}
-			boost::system::error_code ec_3;
-			m_ssl_context_udp.use_certificate_file("server.pem", boost::asio::ssl::context_base::pem, ec_3);
-			if (ec_3) {
-				pfp_fact("UDP SSL use certificate file : " << ec_3.message());
-			} else {
-				pfp_fact("UDP SSL use certificate file : OK");
-			}
-			boost::system::error_code ec_4;
-			m_ssl_context_udp.use_private_key_file("server.pem", boost::asio::ssl::context_base::pem, ec_4);
-			if (ec_4) {
-				pfp_fact("UDP SSL use private file : " << ec_4.message());
-			} else {
-				pfp_fact("UDP SSL use private file : OK");
-			}
-			boost::system::error_code ec_5;
-			m_ssl_context_udp.use_tmp_dh_file("dh2048.pem", ec_5);
-			if (ec_5) {
-				pfp_fact("UDP SSL use tmp dh file : " << ec_5.message());
-			} else {
-				pfp_fact("UDP SSL use tmp dh file : OK");
-			}
+			udp_dtls_context udp_ctx;
 
 //			boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(), CS_PORT);
 //			boost::asio::ssl::dtls::acceptor<boost::asio::ip::udp::socket> acceptor(io_sys_context, ep);
@@ -506,7 +434,7 @@ int main(int argc, char *argv[])
 //			buffer.fill(0);
 //			//pfp_fact("buffer before listen : " << n_pfp::dbgstr_hex2(buffer.data(), buffer.size(), 64));
 //			listen_udp(acceptor, socket, buffer, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
-			listen_udp(m_ssl_context_udp, io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
+			listen_udp(udp_ctx.get_udp_context(), io_sys_context, s_loop_idx, s_tun_in,s_tun_out, s_socket_in, s_socket_out, error, sd);
 
 			//io_sys_context.run(); // TODO herE?
 //			if (error) {

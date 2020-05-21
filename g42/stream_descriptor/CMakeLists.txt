@@ -40,5 +40,5 @@ include(cmake/FindPcapPlusPlus.cmake)
 
 add_definitions(-DASIO_DTLS_USE_BOOST -DASIO_HEADER_ONLY -DPCAPPLUSPLUS)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS} ${OPENSSL_INCLUDE_DIR} ${LIBPCAP_INCLUDE_DIRS} ${PCAPPLUSPLUS_INCLUDE_DIRS} deps/asio_dtls/include)
-add_executable(stream_descriptor main.cpp dbgstr.cpp pfplog.cpp tun_device.cpp)
+add_executable(stream_descriptor main.cpp dbgstr.cpp pfplog.cpp tun_device.cpp tcp_ssl_context.cpp udp_dtls_context.cpp)
 target_link_libraries(stream_descriptor ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ${Boost_LIBRARY_DIR} pthread boost_system boost_thread ${LIBPCAP_LINK_LIBRARIES} ${PCAPPLUSPLUS_LINK_LIBRARIES})
