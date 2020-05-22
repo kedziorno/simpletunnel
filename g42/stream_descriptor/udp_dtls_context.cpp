@@ -2,15 +2,16 @@
 
 #include "pfplog.hpp"
 
-udp_dtls_context::udp_dtls_context()
+udp_dtls_context::udp_dtls_context(const boost::asio::ssl::dtls::context::dtls_method & context_type)
 	:
-			m_udp_dtls_context(boost::asio::ssl::dtls::context::dtls_server)
+			m_udp_dtls_context(context_type)
 {
 	set_options();
 	set_password_callback();
 	use_certificate_file();
 	use_private_key_file();
 	use_tmp_dh_file();
+	use_verify_key_file();
 }
 
 boost::asio::ssl::dtls::context & udp_dtls_context::get_udp_context()

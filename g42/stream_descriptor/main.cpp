@@ -61,11 +61,11 @@ int main(int argc, char *argv[])
 
 	boost::asio::io_context io_sys_context;
 
-	pcapplusplus_writer pcppw(TUN0, PCAP_FILE, io_sys_context);
-	if (write_to_pcap_file == 1) {
-		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
-		pcppw.install_signal_handler();
-	}
+//	pcapplusplus_writer pcppw(TUN0, PCAP_FILE, io_sys_context);
+//	if (write_to_pcap_file == 1) {
+//		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
+//		pcppw.install_signal_handler();
+//	}
 
 	if (cs == SERVER) {
 		if (ssl_tcp_udp == SSL_TCP) {
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
 		if (ssl_tcp_udp == SSL_UDP) {
 			pfp_fact("SERVER UDP...");
-			udp_dtls_context udp_ctx;
+			udp_dtls_context udp_ctx(boost::asio::ssl::dtls::context::dtls_server);
 			server_udp server(io_sys_context, udp_ctx.get_udp_context(), tun.get_file_descriptor());
 			server.run();
 		}
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 		if (ssl_tcp_udp == SSL_UDP) {
 			pfp_fact("CLIENT UDP...");
-			udp_dtls_context udp_ctx;
+			udp_dtls_context udp_ctx(boost::asio::ssl::dtls::context::dtls_client);
 			client_udp client(io_sys_context, udp_ctx.get_udp_context(), tun.get_file_descriptor(), remote_ip);
 			client.run();
 		}

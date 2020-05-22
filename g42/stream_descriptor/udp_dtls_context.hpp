@@ -8,6 +8,7 @@ class udp_dtls_context
 {
 public:
 	udp_dtls_context();
+	udp_dtls_context(const boost::asio::ssl::dtls::context::dtls_method &context_type);
 
 	boost::asio::ssl::dtls::context & get_udp_context();
 
