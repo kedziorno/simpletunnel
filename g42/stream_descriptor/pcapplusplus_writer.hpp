@@ -15,6 +15,9 @@ public:
 	pcapplusplus_writer();
 	pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write, boost::asio::io_context & io_context);
 
+	void open_file();
+	void open_device();
+	void start_capturing();
 	void install_signal_handler();
 
 private:
@@ -86,7 +89,7 @@ private:
 	pcpp::PcapNgFileWriterDevice m_pcapng_file_writer_device;
 	std::unique_ptr<pcpp::PcapLiveDevice*> m_pcap_live_device;
 	pcpp::RawPacketVector m_packet_vector;
-	boost::asio::signal_set m_signal_set;
+	std::unique_ptr<boost::asio::signal_set> m_signal_set;
 };
 
 #endif // PCAPPLUSPLUS_WRITER_HPP

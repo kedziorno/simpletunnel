@@ -7,8 +7,12 @@ pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_networ
 			m_io_context(&io_context),
 			m_name_capture_network_device(name_capture_network_device),
 			m_file_name_to_write(file_name_to_write),
-			m_pcapng_file_writer_device(m_file_name_to_write.c_str()),
-			m_signal_set(m_io_context.get()->get_executor(), SIGINT)
+			m_pcapng_file_writer_device(m_file_name_to_write.c_str())
+{
+	m_signal_set = std::make_unique<boost::asio::signal_set>(m_io_context.get()->get_executor(), SIGINT);
+}
+
+void pcapplusplus_writer::open_file()
 {
 	m_pcapng_file_writer_device.open();
 	if (!m_pcapng_file_writer_device.isOpened()) {
@@ -16,7 +20,10 @@ pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_networ
 	} else {
 		pfp_fact("Open .pcap for writing : OK");
 	}
+}
 
+void pcapplusplus_writer::open_device()
+{
 	m_pcap_live_device = std::make_unique<pcpp::PcapLiveDevice*>();
 	*m_pcap_live_device = pcpp::PcapLiveDeviceList::getInstance().getPcapLiveDeviceByName(m_name_capture_network_device);
 	if (!m_pcap_live_device) {
@@ -28,18 +35,20 @@ pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_networ
 			pfp_fact("PCAP++ Device " << m_name_capture_network_device << " opened : OK");
 		}
 	}
+}
 
+void pcapplusplus_writer::start_capturing()
+{
 	pfp_fact("PCAP++ start async capturing...");
 	(*m_pcap_live_device.get())->startCapture(m_packet_vector);
 	if ((*m_pcap_live_device.get())->captureActive()) {
 		pfp_fact("PCAP++ capturing is activate");
 	}
-
 }
 
 void pcapplusplus_writer::install_signal_handler()
 {
-	m_signal_set.async_wait([&](const boost::system::error_code & error , int signal_number) {
+	m_signal_set.get()->async_wait([&](const boost::system::error_code & error , int signal_number) {
 		if (!error) {
 			if (signal_number == 2) { // CTRL+C
 				pfp_fact("Handling signal CTRL+C");

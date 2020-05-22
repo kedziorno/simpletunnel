@@ -61,11 +61,14 @@ int main(int argc, char *argv[])
 
 	boost::asio::io_context io_sys_context;
 
-//	pcapplusplus_writer pcppw(TUN0, PCAP_FILE, io_sys_context);
-//	if (write_to_pcap_file == 1) {
-//		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
-//		pcppw.install_signal_handler();
-//	}
+	pcapplusplus_writer pcppw(TUN0, PCAP_FILE, io_sys_context);
+	if (write_to_pcap_file == 1) {
+		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
+		pcppw.open_file();
+		pcppw.open_device();
+		pcppw.start_capturing();
+		pcppw.install_signal_handler();
+	}
 
 	if (cs == SERVER) {
 		if (ssl_tcp_udp == SSL_TCP) {
@@ -98,7 +101,4 @@ int main(int argc, char *argv[])
 			client.run();
 		}
 	}
-
-	io_sys_context.run();
-
 }
