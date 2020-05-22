@@ -2,9 +2,9 @@
 
 #include "pfplog.hpp"
 
-tcp_ssl_context::tcp_ssl_context()
+tcp_ssl_context::tcp_ssl_context(const boost::asio::ssl::context::method & context_type)
 	:
-			m_tcp_ssl_context(boost::asio::ssl::context::sslv23)
+			m_tcp_ssl_context(context_type)
 {
 	set_options();
 	set_password_callback();

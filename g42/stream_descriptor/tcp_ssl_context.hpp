@@ -7,6 +7,7 @@ class tcp_ssl_context
 {
 public:
 	tcp_ssl_context();
+	tcp_ssl_context(const boost::asio::ssl::context::method & context_type);
 
 	boost::asio::ssl::context & get_ssl_context();
 

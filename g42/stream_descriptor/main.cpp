@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	if (cs == SERVER) {
 		if (ssl_tcp_udp == SSL_TCP) {
 			pfp_fact("SERVER TCP...");
-			tcp_ssl_context tcp_ctx;
+			tcp_ssl_context tcp_ctx(boost::asio::ssl::context::sslv23_server);
 			server_tcp server(io_sys_context, tcp_ctx.get_ssl_context(), tun.get_file_descriptor());
 			server.run();
 		}
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 	if (cs == CLIENT) {
 		if (ssl_tcp_udp == SSL_TCP) {
 			pfp_fact("CLIENT TCP...");
-			tcp_ssl_context tcp_ctx;
+			tcp_ssl_context tcp_ctx(boost::asio::ssl::context::sslv23_client);
 			client_tcp client(io_sys_context, tcp_ctx.get_ssl_context(), tun.get_file_descriptor(), remote_ip);
 			client.run();
 		}
