@@ -106,7 +106,7 @@ void client_tcp::run()
 					}
 				});
 
-				m_io_context.get()->run();
+				m_io_context.get()->run_for(std::chrono::milliseconds(100));
 				m_io_context.get()->restart();
 			}
 		}
