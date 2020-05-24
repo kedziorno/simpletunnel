@@ -60,14 +60,15 @@ int main(int argc, char *argv[])
 	tun_device tun(TUN0, IFF_TUN, IFF_UP | IFF_RUNNING, ipv6address, TUN_MTU);
 
 	boost::asio::io_context io_sys_context;
+	boost::asio::signal_set signals(io_sys_context.get_executor(), SIGINT);
 
-	pcapplusplus_writer pcppw(TUN0, PCAP_FILE, io_sys_context);
+	pcapplusplus_writer pcppw(TUN0, PCAP_FILE);
 	if (write_to_pcap_file == 1) {
 		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
 		pcppw.open_file();
 		pcppw.open_device();
 		pcppw.start_capturing();
-		pcppw.install_signal_handler();
+		pcppw.install_signal_handler(signals);
 	}
 
 	if (cs == SERVER) {

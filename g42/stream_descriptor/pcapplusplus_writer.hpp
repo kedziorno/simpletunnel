@@ -13,12 +13,12 @@ class pcapplusplus_writer
 {
 public:
 	pcapplusplus_writer();
-	pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write, boost::asio::io_context & io_context);
+	pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write);
 
 	void open_file();
 	void open_device();
 	void start_capturing();
-	void install_signal_handler();
+	void install_signal_handler(boost::asio::signal_set & signal_set);
 
 private:
 	void PacketArrive(pcpp::RawPacket* packet, pcpp::PcapLiveDevice* dev, void* cookie);
@@ -83,13 +83,11 @@ private:
 
 	PacketStats m_packets_statistics;
 private:
-	std::shared_ptr<boost::asio::io_context> m_io_context;
 	std::string m_name_capture_network_device;
 	std::string m_file_name_to_write;
 	pcpp::PcapNgFileWriterDevice m_pcapng_file_writer_device;
 	std::unique_ptr<pcpp::PcapLiveDevice*> m_pcap_live_device;
 	pcpp::RawPacketVector m_packet_vector;
-	std::unique_ptr<boost::asio::signal_set> m_signal_set;
 };
 
 #endif // PCAPPLUSPLUS_WRITER_HPP

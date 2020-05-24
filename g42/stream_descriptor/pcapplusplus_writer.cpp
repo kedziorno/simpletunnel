@@ -2,14 +2,13 @@
 
 #include "pfplog.hpp"
 
-pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write, boost::asio::io_context & io_context)
+pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write)
 	:
-			m_io_context(&io_context),
 			m_name_capture_network_device(name_capture_network_device),
 			m_file_name_to_write(file_name_to_write),
 			m_pcapng_file_writer_device(m_file_name_to_write.c_str())
 {
-	m_signal_set = std::make_unique<boost::asio::signal_set>(m_io_context.get()->get_executor(), SIGINT);
+
 }
 
 void pcapplusplus_writer::open_file()
@@ -46,9 +45,9 @@ void pcapplusplus_writer::start_capturing()
 	}
 }
 
-void pcapplusplus_writer::install_signal_handler()
+void pcapplusplus_writer::install_signal_handler(boost::asio::signal_set & signal_set)
 {
-	m_signal_set.get()->async_wait([&](const boost::system::error_code & error , int signal_number) {
+	signal_set.async_wait([&](const boost::system::error_code & error , int signal_number) {
 		if (!error) {
 			if (signal_number == 2) { // CTRL+C
 				pfp_fact("Handling signal CTRL+C");
