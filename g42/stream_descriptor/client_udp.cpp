@@ -44,8 +44,6 @@ client_udp::client_udp(boost::asio::io_context &io_context, boost::asio::ssl::dt
 	} else {
 		pfp_fact("Connected to : " << it->host_name());
 	}
-
-
 }
 
 void client_udp::run() {
@@ -61,8 +59,8 @@ void client_udp::run() {
 			boost::system::error_code ec;
 			size_t loop_idx = 0;
 			while (1) {
-			m_io_context.get()->reset();
-			pfp_fact("Loop [" << ++loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << m_statistics.tun_in << "/" << m_statistics.tun_out << "/" << m_statistics.socket_in << "/" << m_statistics.socket_out << ")");
+				m_io_context.get()->reset();
+				pfp_fact("Loop [" << ++loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << m_statistics.tun_in << "/" << m_statistics.tun_out << "/" << m_statistics.socket_in << "/" << m_statistics.socket_out << ")");
 
 				// read tun / write socket
 				unsigned char request2[BUFFER_SIZE];
@@ -101,16 +99,9 @@ void client_udp::run() {
 						pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 					}
 				}
-
-				m_io_context.get()->run_one(ec);
-				if (ec) {
-					pfp_fact("io run: " << ec.message());
-				} else {
-					pfp_fact("io run : OK");
-				}
-		};
+				m_io_context.get()->run_for(std::chrono::milliseconds(100));
+			};
 		}
 	});
 	m_io_context.get()->run();
 }
-
