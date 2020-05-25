@@ -49,7 +49,6 @@ client_tcp::client_tcp(boost::asio::io_context &io_context, boost::asio::ssl::co
 
 void client_tcp::run()
 {
-//	m_socket_tcp_ssl.handshake(boost::asio::ssl::stream_base::client, m_error_code);
 	m_socket_tcp_ssl.async_handshake(boost::asio::ssl::stream_base::client, [&](const boost::system::error_code & error_code){
 		if (error_code) {
 			pfp_fact("Handshake : failed , " << m_error_code.message());

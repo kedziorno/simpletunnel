@@ -40,7 +40,7 @@ void server_udp::run()
 		} else {
 			pfp_fact("UDP in async - Accept : OK");
 			boost::asio::mutable_buffers_1 cb = boost::asio::mutable_buffers_1(buffer.data(), buffer.size());
-			m_socket_udp_dtls.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [=](const boost::system::error_code &error, size_t size) {
+			m_socket_udp_dtls.async_handshake(boost::asio::ssl::dtls::socket<boost::asio::ip::udp::socket>::server, cb, [&](const boost::system::error_code &error, size_t size) {
 				(void)size;
 				if (error) {
 					pfp_fact("UDP Server async_handshake : " << error.message());
@@ -89,12 +89,7 @@ void server_udp::run()
 								pfp_fact("Error on write to socket : " << ec.message());
 							}
 						}
-						m_io_context.get()->run_one(m_error_code);
-						if (m_error_code) {
-							pfp_fact("io run : " << m_error_code.message());
-						} else {
-							pfp_fact("io run : OK");
-						}
+						m_io_context.get()->run_for(std::chrono::milliseconds(100));
 					};
 				}
 			});
