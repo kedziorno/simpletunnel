@@ -73,7 +73,15 @@ void pcapplusplus_writer::install_signal_handler(boost::asio::signal_set & signa
 				} else {
 					pfp_fact("PCAP++ error with offline capturing - still capture ???");
 				}
+				pfp_fact("PCAP++ close file " << m_pcapng_file_writer_device.getFileName());
+				m_pcapng_file_writer_device.close();
 				pfp_fact("PCAP++ closing device " << m_name_capture_network_device);
+				(*m_pcap_live_device.get())->close();
+				exit(signal_number);
+			} else {
+				pfp_fact("PCAP++ close file " << m_pcapng_file_writer_device.getFileName());
+				m_pcapng_file_writer_device.close();
+				pfp_fact("Unrecognized signal number : " << signal_number);
 				(*m_pcap_live_device.get())->close();
 				exit(signal_number);
 			}

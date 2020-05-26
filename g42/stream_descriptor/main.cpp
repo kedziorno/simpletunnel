@@ -62,13 +62,26 @@ int main(int argc, char *argv[])
 	boost::asio::io_context io_sys_context;
 
 	pcapplusplus_writer pcppw(TUN0, PCAP_FILE);
+	boost::asio::signal_set signals(io_sys_context.get_executor(), SIGINT);
 	if (write_to_pcap_file == 1) {
 		pfp_fact("Flag -w is set, so we install CTRL+C handler and capture packets");
-		boost::asio::signal_set signals(io_sys_context.get_executor(), SIGINT);
 		pcppw.open_file();
 		pcppw.open_device();
 		pcppw.start_capturing();
 		pcppw.install_signal_handler(signals);
+	} else {
+		pfp_fact("Flag -w not set, so we install empty CTRL+C handler");
+		signals.async_wait([&](const boost::system::error_code & error , int signal_number) {
+			if (error) {
+				pfp_fact("Error in async_wait : " << error.message());
+			} else {
+				if (signal_number == 2) { // CTRL+C
+					pfp_fact("Receive CTRL+C");
+					pfp_fact("Exiting...");
+					exit(signal_number);
+				}
+			}
+		});
 	}
 
 	if (cs == SERVER) {
