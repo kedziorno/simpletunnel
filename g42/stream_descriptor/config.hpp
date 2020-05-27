@@ -14,5 +14,6 @@
 #define SSL_UDP 1
 #define PCAP_FILE "g42_tun"
 #define SERVER_RUN_FOR_INTERVAL_MS 100
+#define CLIENT_RUN_FOR_INTERVAL_MS 100
 
 #endif // CONFIG_HPP

@@ -58,9 +58,12 @@ void client_udp::run() {
 			pfp_fact("UDP Client bytes : " << bytes_transferred);
 			boost::system::error_code ec;
 			size_t loop_idx = 0;
+			m_statistics.tun_in = 0;
+			m_statistics.tun_out = 0;
+			m_statistics.socket_in = 0;
+			m_statistics.socket_out = 0;
 			while (1) {
 				m_io_context.get()->reset();
-				pfp_fact("Loop [" << ++loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << m_statistics.tun_in << "/" << m_statistics.tun_out << "/" << m_statistics.socket_in << "/" << m_statistics.socket_out << ")");
 
 				// read async tun / write socket
 				unsigned char request2[BUFFER_SIZE];
@@ -70,6 +73,7 @@ void client_udp::run() {
 						pfp_fact("Error on read from " << TUN0 << " : " << error.message());
 					} else {
 						pfp_fact("Read " << bytes_transferred << " bytes from fd=" << m_stream_descriptor.get()->native_handle());
+						m_statistics.tun_in += bytes_transferred;
 						boost::asio::mutable_buffer mb = boost::asio::buffer(mb2.data(), bytes_transferred);
 						boost::system::error_code ec;
 						size_t write_socket = m_socket_udp_dtls.send(mb, ec);
@@ -77,6 +81,8 @@ void client_udp::run() {
 							pfp_fact("Error on write to socket : " << ec.message());
 						} else {
 							pfp_fact("Write " << write_socket << " bytes to socket");
+							m_statistics.socket_out += write_socket;
+							pfp_fact("Loop [" << loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << m_statistics.tun_in << "/" << m_statistics.tun_out << "/" << m_statistics.socket_in << "/" << m_statistics.socket_out << ")");
 						}
 					}
 				});
@@ -89,6 +95,7 @@ void client_udp::run() {
 						pfp_fact("Error on async_receive : " << error.message());
 					} else {
 						pfp_fact("Read " << bytes_transferred << " bytes from socket");
+						m_statistics.socket_in += bytes_transferred;
 						boost::system::error_code ec;
 						boost::asio::mutable_buffer mb = boost::asio::buffer(mb1, bytes_transferred);
 						size_t sd_write = m_stream_descriptor.get()->write_some(mb, ec);
@@ -96,11 +103,14 @@ void client_udp::run() {
 							pfp_fact("Error on write to " << TUN0 << " : " << ec.message());
 						} else {
 							pfp_fact("Write " << sd_write << " bytes to fd=" << m_stream_descriptor.get()->native_handle());
+							m_statistics.tun_out += sd_write;
+							pfp_fact("Loop [" << loop_idx << "] : (tun_in/tun_out/socket_in/socket_out) -> (" << m_statistics.tun_in << "/" << m_statistics.tun_out << "/" << m_statistics.socket_in << "/" << m_statistics.socket_out << ")");
 						}
 					}
 				});
 
-				m_io_context.get()->run_for(std::chrono::milliseconds(100));
+				m_io_context.get()->run_for(std::chrono::milliseconds(CLIENT_RUN_FOR_INTERVAL_MS));
+				loop_idx++;
 			};
 		}
 	});
