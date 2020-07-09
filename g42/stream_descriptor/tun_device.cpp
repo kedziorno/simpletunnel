@@ -110,6 +110,7 @@ void tun_device::tun_set_flags(int flags)
 				pfp_throw_error_runtime_oss("Tun flags to UP : " << strerror(errno));
 			} else {
 				pfp_fact("Tun flags to UP : ok");
+				break;
 			}
 		} else {
 			pfp_fact("We have setting UP flags on " << m_name);
