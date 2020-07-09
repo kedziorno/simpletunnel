@@ -99,6 +99,7 @@ void tun_device::tun_set_flags(int flags)
 			pfp_throw_error_runtime_oss("Tun get flags : " << strerror(errno));
 		} else {
 			pfp_fact("Tun get flags : OK");
+			break;
 		}
 		if (!(if_up.ifr_flags & m_flags)) {
 			struct ifreq if_flag_up_running;
