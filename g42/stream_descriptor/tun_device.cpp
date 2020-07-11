@@ -20,6 +20,7 @@ tun_device::tun_device()
 	tun_get_mac();
 	tun_set_ipv6(m_ipv6_address);
 	tun_set_mtu(m_mtu);
+	close(m_socket_inet6_dgram);
 }
 
 tun_device::tun_device(const std::string &device_name, int type, int flags, const std::string &ipv6address, int mtu)
@@ -40,6 +41,7 @@ tun_device::tun_device(const std::string &device_name, int type, int flags, cons
 	tun_get_mac();
 	tun_set_ipv6(m_ipv6_address);
 	tun_set_mtu(m_mtu);
+	close(m_socket_inet6_dgram);
 }
 
 int tun_device::get_file_descriptor()
