@@ -1,6 +1,6 @@
 #include "udp_dtls_context.hpp"
 
-#include "pfplog.hpp"
+#include "unused_code.hpp"
 
 udp_dtls_context::udp_dtls_context(const boost::asio::ssl::dtls::context::dtls_method & context_type)
 	:

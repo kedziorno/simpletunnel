@@ -1,7 +1,6 @@
 #include "server_tcp.hpp"
 #include "config.hpp"
-#include "pfplog.hpp"
-#include "dbgstr.hpp"
+#include "unused_code.hpp"
 #include <boost/exception/all.hpp>
 
 server_tcp::server_tcp(boost::asio::io_context &io_context, boost::asio::ssl::context &tls_context, int tun_descriptor)

@@ -1,6 +1,6 @@
 #include "tcp_ssl_context.hpp"
 
-#include "pfplog.hpp"
+#include "unused_code.hpp"
 
 tcp_ssl_context::tcp_ssl_context(const boost::asio::ssl::context::method & context_type)
 	:

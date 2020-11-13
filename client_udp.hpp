@@ -1,7 +1,7 @@
 #ifndef CLIENT_UDP_HPP
 #define CLIENT_UDP_HPP
 
-#include "pfplog.hpp"
+#include "unused_code.hpp"
 
 #include <asio/dtls.hpp>
 #include <boost/asio/ip/udp.hpp>

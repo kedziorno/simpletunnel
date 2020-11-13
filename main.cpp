@@ -1,7 +1,6 @@
 #include <boost/asio/signal_set.hpp>
 
-#include "pfplog.hpp"
-#include "dbgstr.hpp"
+#include "unused_code.hpp"
 #include "tun_device.hpp"
 #include "tcp_ssl_context.hpp"
 #include "udp_dtls_context.hpp"
@@ -18,6 +17,7 @@ void usage() {
 
 int main(int argc, char *argv[])
 {
+	pfp_fact("This is simple example and very experimental tunnel program for ipv6, based on TCP SSL and UDP DTLS, so you use this for YOUR OWN RISK!");
 	int cs = -1, ssl_tcp_udp = -1, write_to_pcap_file = -1, option;
 
 	char remote_ip[16] = { 0 };

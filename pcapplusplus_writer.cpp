@@ -1,6 +1,6 @@
 #include "pcapplusplus_writer.hpp"
 
-#include "pfplog.hpp"
+#include "unused_code.hpp"
 
 pcapplusplus_writer::pcapplusplus_writer(const std::string & name_capture_network_device, const std::string & file_name_to_write)
 	:

@@ -1,7 +1,6 @@
 #include "server_udp.hpp"
 #include "config.hpp"
-#include "pfplog.hpp"
-#include "dbgstr.hpp"
+#include "unused_code.hpp"
 #include <boost/exception/all.hpp>
 
 server_udp::server_udp(boost::asio::io_context &io_context, boost::asio::ssl::dtls::context &dtls_context, int tun_descriptor)

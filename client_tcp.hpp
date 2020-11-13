@@ -1,7 +1,7 @@
 #ifndef CLIENT_TCP_HPP
 #define CLIENT_TCP_HPP
 
-#include "pfplog.hpp"
+#include "unused_code.hpp"
 
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/asio/ip/tcp.hpp>

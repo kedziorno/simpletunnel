@@ -1,6 +1,5 @@
 #include "tun_device.hpp"
-#include "pfplog.hpp"
-#include "dbgstr.hpp"
+#include "unused_code.hpp"
 
 tun_device::tun_device()
 	:

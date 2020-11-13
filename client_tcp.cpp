@@ -1,7 +1,6 @@
 #include "config.hpp"
 #include "client_tcp.hpp"
-#include "pfplog.hpp"
-#include "dbgstr.hpp"
+#include "unused_code.hpp"
 
 #include <boost/asio/connect.hpp>
 #include <boost/exception/all.hpp>
