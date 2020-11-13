@@ -6,3 +6,7 @@
 	path = deps/asio_dtls
 	url = https://github.com/sdamm/asio_dtls.git
 	branch = master
+[submodule "galaxy42"]
+	path = deps/galaxy42
+	url = https://github.com/yedino/galaxy42
+	branch = dev
